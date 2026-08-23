@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寒枝可栖 — Portfolio</title>
+    <meta name="author" content="寒枝可栖">
+    <meta name="robots" content="index, follow">
+    <link rel="icon" href="home-icon.png">
+    <link rel="stylesheet" href="home.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="nav" id="nav">
+        <div class="nav-bar">
+            <button type="button" class="nav-logo" data-page="0">
+                <span class="logo-mark">&lt;/&gt;</span>
+                <span class="logo-name">Portfolio</span>
+            </button>
+            <ul class="nav-list" id="navList">
+                <li><button type="button" class="nav-link active" data-page="0">首页</button></li>
+                <li><button type="button" class="nav-link" data-page="1">尝试</button></li>
+                <li><button type="button" class="nav-link" data-page="2">项目</button></li>
+                <li><button type="button" class="nav-link" data-page="3">我的世界</button></li>
+            </ul>
+            <div class="nav-right">
+                <button class="nav-theme" id="themeBtn" aria-label="切换主题">
+                    <svg class="ic-sun" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="5" fill="currentColor"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                    <svg class="ic-moon" viewBox="0 0 24 24" width="18" height="18"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor"/></svg>
+                </button>
+                <button class="nav-burger" id="burger" aria-label="菜单">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 页面容器（横向切换） -->
+    <div class="pages" id="pages">
+        <!-- 页面 0: 首页 -->
+        <section class="page active" data-page="0">
+            <div class="landing">
+                <div class="landing-content">
+                    <h1 class="landing-title">寒枝可栖</h1>
+                    <p class="landing-sub">Python · Markdown · 网站部署 · AI 智能体</p>
+                    <div class="landing-btns">
+                        <button type="button" class="btn btn-dark" data-page="1">开始尝试</button>
+                        <button type="button" class="btn btn-light" data-page="2">查看项目</button>
+                        <button type="button" class="btn btn-light" data-page="3">我的世界</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页面 1: 尝试 -->
+        <section class="page" data-page="1">
+            <div class="try-wrap">
+                <!-- 左侧工具选择 -->
+                <div class="try-sidebar">
+                    <h3 class="try-title">在线工具</h3>
+                    <button class="tool-btn active" data-tool="python">
+                        <span class="tool-icon">🐍</span>
+                        <span class="tool-info">
+                            <span class="tool-name">Python</span>
+                            <span class="tool-desc">在线运行</span>
+                        </span>
+                    </button>
+                    <button class="tool-btn" data-tool="markdown">
+                        <span class="tool-icon">📝</span>
+                        <span class="tool-info">
+                            <span class="tool-name">Markdown</span>
+                            <span class="tool-desc">在线编辑</span>
+                        </span>
+                    </button>
+                </div>
+
+                <!-- 右侧工具区域 -->
+                <div class="try-main">
+                    <!-- Python 面板 -->
+                    <div class="try-panel active" id="panel-python">
+                        <div class="try-toolbar">
+                            <span class="try-url">Python 在线运行 (Pyodide)</span>
+                            <div class="py-actions">
+                                <button class="md-btn" id="pyDownload" title="下载 .py 文件">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                                    下载
+                                </button>
+                                <button class="try-run" id="pyRun">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                                    运行
+                                </button>
+                            </div>
+                        </div>
+                        <div class="py-wrap">
+                            <div class="py-editor-area">
+                                <div class="py-editor-header">main.py</div>
+                                <div class="code-editor-wrap">
+                                    <pre class="code-highlight" id="pyHighlight" aria-hidden="true"><code class="language-python"></code></pre>
+                                    <textarea id="pyCode" spellcheck="false" placeholder="# 在此输入 Python 代码">print("Hello, World!")
+
+for i in range(5):
+    print(f"第 {i+1} 次循环")</textarea>
+                                </div>
+                            </div>
+                            <div class="py-output-area">
+                                <div class="py-output-header">输出</div>
+                                <div class="py-output" id="pyOutput"><span class="py-placeholder">点击「运行」执行代码</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Markdown 面板 -->
+                    <div class="try-panel" id="panel-markdown">
+                        <div class="try-toolbar">
+                            <span class="try-url">Markdown 在线编辑</span>
+                            <div class="md-actions">
+                                <button class="md-btn" id="mdCopy" title="复制">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                    复制
+                                </button>
+                                <button class="md-btn" id="mdDownload" title="下载">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                                    下载
+                                </button>
+                            </div>
+                        </div>
+                        <div class="md-wrap">
+                            <div class="md-editor-area">
+                                <div class="md-editor-header">编辑</div>
+                                <textarea id="mdCode" spellcheck="false" placeholder="# 在此输入 Markdown"># Hello World
+
+这是一个 **Markdown** 编辑器。
+
+## 功能列表
+- 实时预览
+- 代码高亮
+- 表格支持
+
+```python
+print("Hello!")
+```
+
+> 引用文本
+
+| 功能 | 状态 |
+|------|------|
+| 编辑 | ✅ |
+| 预览 | ✅ |</textarea>
+                            </div>
+                            <div class="md-preview-area">
+                                <div class="md-preview-header">预览</div>
+                                <div class="md-preview" id="mdPreview"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页面 2: 项目 -->
+        <section class="page" data-page="2">
+            <div class="page-scroll" id="page2Scroll">
+                <div class="container">
+                    <div class="sec-head">
+                        <span class="sec-num">02</span>
+                        <h2 class="sec-title">精选项目</h2>
+                    </div>
+                    <div class="project-list" id="projectList">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页面 3: 我的世界 -->
+        <section class="page" data-page="3">
+            <div class="page-scroll" id="page3Scroll">
+                <div class="container">
+                    <div class="sec-head">
+                        <span class="sec-num">03</span>
+                        <h2 class="sec-title">我的世界</h2>
+                    </div>
+                    <div class="minecraft-wrap">
+                        <!-- 命令方块 -->
+                        <div class="mc-card">
+                            <div class="mc-card-header">
+                                <span class="mc-icon-block">⬛</span>
+                                <span>服务器信息</span>
+                            </div>
+                            <div class="mc-card-body">
+                                <div class="mc-info-row">
+                                    <span class="mc-info-label">服务器名称</span>
+                                    <span class="mc-info-value">寒枝可栖的方块世界</span>
+                                </div>
+                                <div class="mc-info-row">
+                                    <span class="mc-info-label">版本</span>
+                                    <span class="mc-info-value">1.20.4 (Java Edition)</span>
+                                </div>
+                                <div class="mc-info-row">
+                                    <span class="mc-info-label">类型</span>
+                                    <span class="mc-info-value">生存 · 轻度 Mod</span>
+                                </div>
+                                <div class="mc-info-row">
+                                    <span class="mc-info-label">状态</span>
+                                    <span class="mc-status-online">● 在线</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 建筑展示 -->
+                        <div class="mc-card">
+                            <div class="mc-card-header">
+                                <span class="mc-icon-block">🏠</span>
+                                <span>建筑展示</span>
+                            </div>
+                            <div class="mc-builds">
+                                <div class="mc-build-item">
+                                    <div class="mc-build-img" style="background: linear-gradient(135deg, #3a5a40, #588157);">🏰</div>
+                                    <div class="mc-build-name">主城城堡</div>
+                                    <div class="mc-build-desc">中世纪风格石头城堡，含城墙与塔楼</div>
+                                </div>
+                                <div class="mc-build-item">
+                                    <div class="mc-build-img" style="background: linear-gradient(135deg, #8d99ae, #2b2d42);">🏘️</div>
+                                    <div class="mc-build-name">村庄集市</div>
+                                    <div class="mc-build-desc">仿中世纪村庄，含市场与住宅区</div>
+                                </div>
+                                <div class="mc-build-item">
+                                    <div class="mc-build-img" style="background: linear-gradient(135deg, #e07a5f, #3d405b);">🌉</div>
+                                    <div class="mc-build-name">跨海大桥</div>
+                                    <div class="mc-build-desc">连接两座岛屿的红石大桥</div>
+                                </div>
+                                <div class="mc-build-item">
+                                    <div class="mc-build-img" style="background: linear-gradient(135deg, #2a9d8f, #264653);">⛏️</div>
+                                    <div class="mc-build-name">自动刷怪塔</div>
+                                    <div class="mc-build-desc">基于红石自动收集系统</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 红石作品 -->
+                        <div class="mc-card">
+                            <div class="mc-card-header">
+                                <span class="mc-icon-block">🔴</span>
+                                <span>红石作品</span>
+                            </div>
+                            <div class="mc-redstone-list">
+                                <div class="mc-redstone-item">
+                                    <span class="mc-redstone-name">自动农场</span>
+                                    <span class="mc-redstone-tag">收割机</span>
+                                </div>
+                                <div class="mc-redstone-item">
+                                    <span class="mc-redstone-name">物品分类系统</span>
+                                    <span class="mc-redstone-tag">存储</span>
+                                </div>
+                                <div class="mc-redstone-item">
+                                    <span class="mc-redstone-name">密码门</span>
+                                    <span class="mc-redstone-tag">安全</span>
+                                </div>
+                                <div class="mc-redstone-item">
+                                    <span class="mc-redstone-name">电梯</span>
+                                    <span class="mc-redstone-tag">交通</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 服务器规则 -->
+                        <div class="mc-card">
+                            <div class="mc-card-header">
+                                <span class="mc-icon-block">📜</span>
+                                <span>服务器规则</span>
+                            </div>
+                            <div class="mc-rules">
+                                <p>1. 禁止恶意破坏他人建筑</p>
+                                <p>2. 禁止使用外挂或作弊客户端</p>
+                                <p>3. 尊重每一位玩家，禁止辱骂</p>
+                                <p>4. 共建友好社区，有困难互相帮助</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    <footer class="footer">
+        <div class="container footer-inner">
+            <div class="footer-left">
+                <button type="button" class="footer-link" id="footerAbout" title="关于我">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                    <span class="footer-text">关于我</span>
+                </button>
+                <span class="footer-sep">·</span>
+                <button type="button" class="footer-link" id="footerGithub" title="GitHub">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.26.82-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.84 1.236 1.84 1.236 1.07 1.835 2.807 1.305 3.492.998.108-.776.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.3 1.23A11.5 11.5 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.218.694.825.576C20.565 21.795 24 17.298 24 12 24 5.37 18.627 0 12 0z"/></svg>
+                    <span class="footer-text">GitHub</span>
+                </button>
+                <span class="footer-sep">·</span>
+                <button type="button" class="footer-link" id="footerBilibili" title="bilibili">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.511.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.266-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .355-.124.657-.373.906L17.813 4.653zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.786 1.894v7.52c.017.764.28 1.395.786 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.129.786-1.893v-7.52c-.017-.764-.28-1.396-.786-1.894-.507-.497-1.134-.755-1.88-.773H5.333zM8 11.107c.373 0 .684.124.933.373.25.249.382.569.4.96v1.173c-.018.391-.15.711-.4.96-.249.249-.56.373-.933.373s-.684-.124-.933-.373c-.25-.249-.382-.569-.4-.96v-1.173c.018-.391.15-.711.4-.96.249-.249.56-.373.933-.373zm8 0c.373 0 .684.124.933.373.25.249.382.569.4.96v1.173c-.018.391-.15.711-.4.96-.249.249-.56.373-.933.373s-.684-.124-.933-.373c-.25-.249-.382-.569-.4-.96v-1.173c.018-.391.15-.711.4-.96.249-.249.56-.373.933-.373z"/></svg>
+                    <span class="footer-text">bilibili</span>
+                </button>
+            </div>
+            <button type="button" class="footer-top" id="backHome">回到首页 ↑</button>
+        </div>
+    </footer>
+
+    <!-- AI 浮动按钮 -->
+    <button class="ai-fab" id="aiFab" aria-label="AI 对话">
+        <svg viewBox="0 0 56 56" width="56" height="56">
+            <defs>
+                <linearGradient id="aiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#667eea"/>
+                    <stop offset="50%" stop-color="#764ba2"/>
+                    <stop offset="100%" stop-color="#f093fb"/>
+                </linearGradient>
+            </defs>
+            <circle cx="28" cy="28" r="26" fill="url(#aiGrad)"/>
+            <text x="28" y="35" text-anchor="middle" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="white">AI</text>
+        </svg>
+    </button>
+
+    <!-- AI 对话浮窗 -->
+    <div class="ai-chat" id="aiChat">
+        <div class="ai-chat-header">
+            <span class="ai-chat-title">AI 对话</span>
+            <button class="ai-chat-close" id="aiChatClose" aria-label="关闭">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="ai-chat-messages" id="aiMessages">
+            <div class="ai-msg ai-msg-bot">
+                <div class="ai-msg-avatar">AI</div>
+                <div class="ai-msg-content">你好！我是你的 AI 助手，有什么可以帮你的吗？</div>
+            </div>
+        </div>
+        <div class="ai-chat-input-area">
+            <textarea id="aiInput" placeholder="输入消息..." rows="1"></textarea>
+            <button class="ai-send-btn" id="aiSend" aria-label="发送">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- 第三方库 -->
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 自定义脚本 -->
+    <script src="tools.js"></script>
+    <script src="ai.js"></script>
+    <script src="home.js"></script>
+</body>
+</html>
