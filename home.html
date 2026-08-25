@@ -6,7 +6,7 @@
     <title>寒枝可栖 — Portfolio</title>
     <meta name="author" content="寒枝可栖">
     <meta name="robots" content="index, follow">
-    <link rel="icon" href="home-icon.png">
+    <link rel="icon" href="home-icon.jpeg">
     <link rel="stylesheet" href="home.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -42,13 +42,39 @@
         <!-- 页面 0: 首页 -->
         <section class="page active" data-page="0">
             <div class="landing">
+                <div class="landing-deco" aria-hidden="true">&lt;/&gt;</div>
+                <div class="landing-brand-vertical" aria-hidden="true">hanzkx.de5.net</div>
                 <div class="landing-content">
-                    <h1 class="landing-title">寒枝可栖</h1>
-                    <p class="landing-sub">Python · Markdown · 网站部署</p>
+                    <p class="landing-eyebrow">PERSONAL PORTFOLIO</p>
+                    <h1 class="landing-title">
+                        <span class="landing-title-fill">寒枝可栖</span>
+                    </h1>
+                    <p class="landing-desc">聚合 Python 运行、Markdown 编辑、网站部署与 AI 工具——让开发与创作，变得简单高效。</p>
                     <div class="landing-btns">
                         <button type="button" class="btn btn-dark" data-page="1">开始尝试</button>
                         <button type="button" class="btn btn-light" data-page="2">查看项目</button>
-                        <button type="button" class="btn btn-light" data-page="3">我的世界</button>
+                        <button type="button" class="btn btn-light" data-page="3">论坛</button>
+                    </div>
+                    <div class="landing-stats">
+                        <div class="stat-item">
+                            <span class="stat-num">6</span>
+                            <span class="stat-label">项目作品</span>
+                        </div>
+                        <div class="stat-sep"></div>
+                        <div class="stat-item">
+                            <span class="stat-num">2</span>
+                            <span class="stat-label">在线工具</span>
+                        </div>
+                        <div class="stat-sep"></div>
+                        <div class="stat-item">
+                            <span class="stat-num">4</span>
+                            <span class="stat-label">技术方向</span>
+                        </div>
+                        <div class="stat-sep"></div>
+                        <div class="stat-item">
+                            <span class="stat-num">&infin;</span>
+                            <span class="stat-label">创作热情</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -72,6 +98,20 @@
                         <span class="tool-info">
                             <span class="tool-name">Markdown</span>
                             <span class="tool-desc">在线编辑</span>
+                        </span>
+                    </button>
+                    <button class="tool-btn" data-tool="tdisplay">
+                        <span class="tool-icon">✦</span>
+                        <span class="tool-info">
+                            <span class="tool-name">T显动画生成</span>
+                            <span class="tool-desc">打字机 rawJSON</span>
+                        </span>
+                    </button>
+                    <button class="tool-btn" data-tool="tvedit">
+                        <span class="tool-icon">🛠</span>
+                        <span class="tool-info">
+                            <span class="tool-name">T显在线编辑预览</span>
+                            <span class="tool-desc">可视化 rawtext</span>
                         </span>
                     </button>
                 </div>
@@ -152,6 +192,132 @@ print("Hello!")
                             <div class="md-preview-area">
                                 <div class="md-preview-header">预览</div>
                                 <div class="md-preview" id="mdPreview"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- T显在线编辑预览 面板 -->
+                    <div class="try-panel" id="panel-tvedit">
+                        <div class="try-toolbar">
+                            <span class="try-url">T显可视化编辑器 — 构建 rawtext JSON</span>
+                            <div class="tv-actions">
+                                <button class="md-btn" id="tvAddText" title="添加文本元素">+ 文本</button>
+                                <button class="md-btn" id="tvAddSel" title="添加选择器">+ 选择器</button>
+                                <button class="md-btn" id="tvAddScr" title="添加记分板">+ 记分板</button>
+                                <button class="md-btn" id="tvCopyCmd" title="复制命令">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                    复制命令
+                                </button>
+                            </div>
+                        </div>
+                        <div class="tv-wrap">
+                            <!-- 左侧：元素列表 -->
+                            <div class="tv-list-area">
+                                <div class="tv-config-bar">
+                                    <div class="tv-field">
+                                        <label>指令类型</label>
+                                        <select id="tvCmdType">
+                                            <option value="titleraw">/titleraw</option>
+                                            <option value="tellraw">/tellraw</option>
+                                        </select>
+                                    </div>
+                                    <div class="tv-field">
+                                        <label>显示位置</label>
+                                        <select id="tvPosition">
+                                            <option value="title">title</option>
+                                            <option value="actionbar" selected>actionbar</option>
+                                            <option value="subtitle">subtitle</option>
+                                        </select>
+                                    </div>
+                                    <div class="tv-field">
+                                        <label>目标</label>
+                                        <input type="text" id="tvTarget" value="@a" spellcheck="false">
+                                    </div>
+                                </div>
+                                <div class="tv-list-header">
+                                    <span>元素列表 (<span id="tvElemCount">0</span>)</span>
+                                    <button class="md-btn" id="tvClearAll" title="清空">清空</button>
+                                </div>
+                                <div class="tv-elem-list" id="tvElemList">
+                                    <div class="tv-empty">点击上方按钮添加元素</div>
+                                </div>
+                            </div>
+
+                            <!-- 右侧：预览 + JSON + 命令 -->
+                            <div class="tv-output-area">
+                                <div class="tv-preview-section">
+                                    <div class="tv-section-header">
+                                        <span>预览</span>
+                                        <span class="tv-char-count"><span id="tvCharCount">0</span> 字符</span>
+                                    </div>
+                                    <div class="tv-preview" id="tvPreview"></div>
+                                </div>
+                                <div class="tv-json-section">
+                                    <div class="tv-section-header">
+                                        <span>JSON 输出</span>
+                                        <div class="tv-section-btns">
+                                            <button class="md-btn" id="tvFormat" title="格式化">格式化</button>
+                                            <button class="md-btn" id="tvCompress" title="压缩">压缩</button>
+                                        </div>
+                                    </div>
+                                    <div class="tv-json-output" id="tvJsonOutput"></div>
+                                </div>
+                                <div class="tv-cmd-section">
+                                    <div class="tv-section-header">
+                                        <span>命令</span>
+                                    </div>
+                                    <div class="tv-cmd-output" id="tvCmdOutput"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- T显动画生成 面板 -->
+                    <div class="try-panel" id="panel-tdisplay">
+                        <div class="try-toolbar">
+                            <span class="try-url">T显动画生成 — 生成打字机动画效果的 rawJSON</span>
+                            <div class="td-actions">
+                                <button class="md-btn" id="tdConvert">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                                    转换
+                                </button>
+                                <button class="md-btn" id="tdCopy">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                    复制
+                                </button>
+                                <button class="md-btn" id="tdClear">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                    清空
+                                </button>
+                            </div>
+                        </div>
+                        <div class="td-wrap">
+                            <div class="td-input-area">
+                                <div class="td-form">
+                                    <div class="td-field">
+                                        <label>初始分数</label>
+                                        <input type="number" id="tdInitScore" placeholder="不填默认为0">
+                                    </div>
+                                    <div class="td-field">
+                                        <label>计分板名称</label>
+                                        <input type="text" id="tdScoreboard" placeholder="例如: T显" value="T显">
+                                    </div>
+                                    <div class="td-field">
+                                        <label>是否初始化</label>
+                                        <select id="tdInit">
+                                            <option value="false">否</option>
+                                            <option value="true">是</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="td-editor-header">输入文本（支持 $颜色码 和 $fn 换行）</div>
+                                <textarea id="tdInput" spellcheck="false" placeholder="请输入需要转换的文本（支持 $颜色码 和 $fn 换行）...">$e欢迎来到 $b我的世界$r！$fn这是第二行</textarea>
+                                <div class="td-preview-header">颜色预览</div>
+                                <div class="td-preview" id="tdPreview"></div>
+                            </div>
+                            <div class="td-output-area">
+                                <div class="td-output-header">输出 (rawJSON)</div>
+                                <div class="td-output" id="tdOutput"><span class="td-placeholder">转换结果将显示在这里...</span></div>
                             </div>
                         </div>
                     </div>
@@ -303,6 +469,43 @@ print("Hello!")
             <button type="button" class="footer-top" id="backHome">回到首页 ↑</button>
         </div>
     </footer>
+
+    <!-- AI 浮动按钮 -->
+    <button class="ai-fab" id="aiFab" aria-label="AI 对话">
+        <svg viewBox="0 0 56 56" width="56" height="56">
+            <defs>
+                <linearGradient id="aiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#667eea"/>
+                    <stop offset="50%" stop-color="#764ba2"/>
+                    <stop offset="100%" stop-color="#f093fb"/>
+                </linearGradient>
+            </defs>
+            <circle cx="28" cy="28" r="26" fill="url(#aiGrad)"/>
+            <text x="28" y="35" text-anchor="middle" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="white">AI</text>
+        </svg>
+    </button>
+
+    <!-- AI 对话浮窗 -->
+    <div class="ai-chat" id="aiChat">
+        <div class="ai-chat-header">
+            <span class="ai-chat-title">AI 对话</span>
+            <button class="ai-chat-close" id="aiChatClose" aria-label="关闭">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="ai-chat-messages" id="aiMessages">
+            <div class="ai-msg ai-msg-bot">
+                <div class="ai-msg-avatar">AI</div>
+                <div class="ai-msg-content">你好！我是你的 AI 助手，有什么可以帮你的吗？</div>
+            </div>
+        </div>
+        <div class="ai-chat-input-area">
+            <textarea id="aiInput" placeholder="输入消息..." rows="1"></textarea>
+            <button class="ai-send-btn" id="aiSend" aria-label="发送">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+        </div>
+    </div>
 
     <!-- 第三方库 -->
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>

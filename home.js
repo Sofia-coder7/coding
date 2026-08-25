@@ -135,6 +135,11 @@ function switchPage(index) {
 
   document.getElementById('burger').classList.remove('open');
   document.getElementById('navList').classList.remove('open');
+
+  const aiFab = document.getElementById('aiFab');
+  if (aiFab) {
+    aiFab.classList.toggle('show', index === 1);
+  }
 }
 
 function initToolSwitch() {
