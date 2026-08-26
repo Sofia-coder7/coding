@@ -12,32 +12,84 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- 导航栏 -->
-    <nav class="nav" id="nav">
-        <div class="nav-bar">
-            <button type="button" class="nav-logo" data-page="0">
+    <!-- 左侧边栏 -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-top">
+            <button type="button" class="sidebar-logo" data-page="0">
                 <span class="logo-mark">&lt;/&gt;</span>
                 <span class="logo-name">Portfolio</span>
             </button>
-            <ul class="nav-list" id="navList">
-                <li><button type="button" class="nav-link active" data-page="0">首页</button></li>
-                <li><button type="button" class="nav-link" data-page="1">尝试</button></li>
-                <li><button type="button" class="nav-link" data-page="2">项目</button></li>
-                <li><button type="button" class="nav-link" data-page="3">我的世界</button></li>
-            </ul>
-            <div class="nav-right">
-                <button class="nav-theme" id="themeBtn" aria-label="切换主题">
+        </div>
+
+        <nav class="sidebar-nav">
+            <button type="button" class="sidebar-link active" data-page="0">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                <span>首页</span>
+            </button>
+            <button type="button" class="sidebar-link" data-page="1">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                <span>关于</span>
+            </button>
+
+            <div class="sidebar-dropdown" id="dropdownTools">
+                <button type="button" class="sidebar-link sidebar-dropdown-toggle" data-dropdown="tools">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+                    <span>在线工具</span>
+                    <svg class="dropdown-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="sidebar-dropdown-menu">
+                    <button type="button" class="sidebar-sublink active" data-tool="python">
+                        <span>🐍 Python</span>
+                    </button>
+                    <button type="button" class="sidebar-sublink" data-tool="markdown">
+                        <span>📝 Markdown</span>
+                    </button>
+                    <button type="button" class="sidebar-sublink" data-tool="tvedit">
+                        <span>🛠 T显编辑器</span>
+                    </button>
+                </div>
+            </div>
+
+            <button type="button" class="sidebar-link" data-page="3">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                <span>在线网站</span>
+            </button>
+
+            <button type="button" class="sidebar-link" data-page="5">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                <span>Minecraft</span>
+            </button>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-links">
+                <button class="sidebar-icon-btn sidebar-theme" id="themeBtn" aria-label="切换主题" title="切换主题">
                     <svg class="ic-sun" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="5" fill="currentColor"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                     <svg class="ic-moon" viewBox="0 0 24 24" width="18" height="18"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" fill="currentColor"/></svg>
                 </button>
-                <button class="nav-burger" id="burger" aria-label="菜单">
-                    <span></span><span></span><span></span>
+                <button type="button" class="sidebar-icon-btn" id="footerGithub" title="GitHub">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.26.82-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.84 1.236 1.84 1.236 1.07 1.835 2.807 1.305 3.492.998.108-.776.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.3 1.23A11.5 11.5 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.218.694.825.576C20.565 21.795 24 17.298 24 12 24 5.37 18.627 0 12 0z"/></svg>
+                </button>
+                <button type="button" class="sidebar-icon-btn" id="footerBilibili" title="bilibili">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.511.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.266-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .355-.124.657-.373.906L17.813 4.653zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.786 1.894v7.52c.017.764.28 1.395.786 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.129.786-1.893v-7.52c-.017-.764-.28-1.396-.786-1.894-.507-.497-1.134-.755-1.88-.773H5.333zM8 11.107c.373 0 .684.124.933.373.25.249.382.569.4.96v1.173c-.018.391-.15.711-.4.96-.249.249-.56.373-.933.373s-.684-.124-.933-.373c-.25-.249-.382-.569-.4-.96v-1.173c.018-.391.15-.711.4-.96.249-.249.56-.373.933-.373zm8 0c.373 0 .684.124.933.373.25.249.382.569.4.96v1.173c-.018.391-.15.711-.4.96-.249.249-.56.373-.933.373s-.684-.124-.933-.373c-.25-.249-.382-.569-.4-.96v-1.173c.018-.391.15-.711.4-.96.249-.249.56-.373.933-.373z"/></svg>
+                </button>
+                <button type="button" class="sidebar-icon-btn" id="footerAbout" title="关于我">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
                 </button>
             </div>
+            <p class="sidebar-copy">© 2026 hanzkx.de5.net</p>
         </div>
-    </nav>
 
-    <!-- 页面容器（横向切换） -->
+        <button class="sidebar-burger" id="burger" aria-label="关闭菜单">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+    </aside>
+
+    <button class="sidebar-open-btn" id="sidebarOpen" aria-label="打开菜单">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+
+    <!-- 页面容器 -->
     <div class="pages" id="pages">
         <!-- 页面 0: 首页 -->
         <section class="page active" data-page="0">
@@ -49,20 +101,14 @@
                     <h1 class="landing-title">
                         <span class="landing-title-fill">寒枝可栖</span>
                     </h1>
-                    <p class="landing-desc">聚合 Python 运行、Markdown 编辑、网站部署与 AI 工具——让开发与创作，变得简单高效。</p>
+                    <p class="landing-desc">聚合 Python 运行、Markdown 编辑、网站部署与 T显可视化——让开发与创作，变得简单高效。</p>
                     <div class="landing-btns">
-                        <button type="button" class="btn btn-dark" data-page="1">开始尝试</button>
-                        <button type="button" class="btn btn-light" data-page="2">查看项目</button>
-                        <button type="button" class="btn btn-light" data-page="3">论坛</button>
+                        <button type="button" class="btn btn-dark" data-page="2">在线工具</button>
+                        <button type="button" class="btn btn-light" data-page="5">Minecraft</button>
                     </div>
                     <div class="landing-stats">
                         <div class="stat-item">
-                            <span class="stat-num">6</span>
-                            <span class="stat-label">项目作品</span>
-                        </div>
-                        <div class="stat-sep"></div>
-                        <div class="stat-item">
-                            <span class="stat-num">2</span>
+                            <span class="stat-num">3</span>
                             <span class="stat-label">在线工具</span>
                         </div>
                         <div class="stat-sep"></div>
@@ -80,43 +126,9 @@
             </div>
         </section>
 
-        <!-- 页面 1: 尝试 -->
-        <section class="page" data-page="1">
+        <!-- 页面 2: 在线工具 -->
+        <section class="page" data-page="2">
             <div class="try-wrap">
-                <!-- 左侧工具选择 -->
-                <div class="try-sidebar">
-                    <h3 class="try-title">在线工具</h3>
-                    <button class="tool-btn active" data-tool="python">
-                        <span class="tool-icon">🐍</span>
-                        <span class="tool-info">
-                            <span class="tool-name">Python</span>
-                            <span class="tool-desc">在线运行</span>
-                        </span>
-                    </button>
-                    <button class="tool-btn" data-tool="markdown">
-                        <span class="tool-icon">📝</span>
-                        <span class="tool-info">
-                            <span class="tool-name">Markdown</span>
-                            <span class="tool-desc">在线编辑</span>
-                        </span>
-                    </button>
-                    <button class="tool-btn" data-tool="tdisplay">
-                        <span class="tool-icon">✦</span>
-                        <span class="tool-info">
-                            <span class="tool-name">T显动画生成</span>
-                            <span class="tool-desc">打字机 rawJSON</span>
-                        </span>
-                    </button>
-                    <button class="tool-btn" data-tool="tvedit">
-                        <span class="tool-icon">🛠</span>
-                        <span class="tool-info">
-                            <span class="tool-name">T显在线编辑预览</span>
-                            <span class="tool-desc">可视化 rawtext</span>
-                        </span>
-                    </button>
-                </div>
-
-                <!-- 右侧工具区域 -->
                 <div class="try-main">
                     <!-- Python 面板 -->
                     <div class="try-panel active" id="panel-python">
@@ -271,77 +283,51 @@ print("Hello!")
                             </div>
                         </div>
                     </div>
-
-                    <!-- T显动画生成 面板 -->
-                    <div class="try-panel" id="panel-tdisplay">
-                        <div class="try-toolbar">
-                            <span class="try-url">T显动画生成 — 生成打字机动画效果的 rawJSON</span>
-                            <div class="td-actions">
-                                <button class="md-btn" id="tdConvert">
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-                                    转换
-                                </button>
-                                <button class="md-btn" id="tdCopy">
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                                    复制
-                                </button>
-                                <button class="md-btn" id="tdClear">
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                                    清空
-                                </button>
-                            </div>
-                        </div>
-                        <div class="td-wrap">
-                            <div class="td-input-area">
-                                <div class="td-form">
-                                    <div class="td-field">
-                                        <label>初始分数</label>
-                                        <input type="number" id="tdInitScore" placeholder="不填默认为0">
-                                    </div>
-                                    <div class="td-field">
-                                        <label>计分板名称</label>
-                                        <input type="text" id="tdScoreboard" placeholder="例如: T显" value="T显">
-                                    </div>
-                                    <div class="td-field">
-                                        <label>是否初始化</label>
-                                        <select id="tdInit">
-                                            <option value="false">否</option>
-                                            <option value="true">是</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="td-editor-header">输入文本（支持 $颜色码 和 $fn 换行）</div>
-                                <textarea id="tdInput" spellcheck="false" placeholder="请输入需要转换的文本（支持 $颜色码 和 $fn 换行）...">$e欢迎来到 $b我的世界$r！$fn这是第二行</textarea>
-                                <div class="td-preview-header">颜色预览</div>
-                                <div class="td-preview" id="tdPreview"></div>
-                            </div>
-                            <div class="td-output-area">
-                                <div class="td-output-header">输出 (rawJSON)</div>
-                                <div class="td-output" id="tdOutput"><span class="td-placeholder">转换结果将显示在这里...</span></div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- 页面 2: 项目 -->
-        <section class="page" data-page="2">
-            <div class="page-scroll" id="page2Scroll">
-                <div class="container">
-                    <div class="sec-head">
-                        <span class="sec-num">02</span>
-                        <h2 class="sec-title">精选项目</h2>
-                    </div>
-                    <div class="project-list" id="projectList">
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 页面 3: 我的世界 -->
+        <!-- 页面 3: 在线网站 -->
         <section class="page" data-page="3">
             <div class="page-scroll" id="page3Scroll">
+                <div class="container">
+                    <div class="sec-head" style="margin-bottom: 40px;">
+                        <span class="sec-num">01</span>
+                        <h3 class="sec-title">在线网站</h3>
+                    </div>
+                    <div class="sites-grid">
+                        <a href="https://zh.minecraft.wiki/" target="_blank" rel="noopener" class="site-card">
+                            <div class="site-card-icon">
+                                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                            </div>
+                            <span class="site-card-name">Minecraft中文Wiki</span>
+                            <span class="site-card-url">zh.minecraft.wiki</span>
+                            <span class="site-card-desc">Minecraft 中文百科全书，包含方块、物品、生物等详细资料</span>
+                        </a>
+                        <a href="https://wiki.bedrock.dev/" target="_blank" rel="noopener" class="site-card">
+                            <div class="site-card-icon">
+                                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21h18M3 21V8l9-5 9 5v13M9 21v-6h6v6"/></svg>
+                            </div>
+                            <span class="site-card-name">Minecraft基岩版Wiki</span>
+                            <span class="site-card-url">wiki.bedrock.dev</span>
+                            <span class="site-card-desc">基岩版附加件、行为包、资源包开发文档</span>
+                        </a>
+                        <a href="https://idlist.projectxero.top/" target="_blank" rel="noopener" class="site-card">
+                            <div class="site-card-icon">
+                                <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+                            </div>
+                            <span class="site-card-name">MCBEID表</span>
+                            <span class="site-card-url">idlist.projectxero.top</span>
+                            <span class="site-card-desc">基岩版方块、物品、实体 ID 查询表</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页面 5: 我的世界 -->
+        <section class="page" data-page="5">
+            <div class="page-scroll" id="page5Scroll">
                 <div class="container">
                     <div class="sec-head">
                         <span class="sec-num">03</span>
@@ -447,70 +433,152 @@ print("Hello!")
                 </div>
             </div>
         </section>
+
+        <!-- 页面 1: 关于 -->
+        <section class="page" data-page="1">
+            <div class="page-scroll" id="page1Scroll">
+                <div class="container">
+                    <div class="about-hero">
+                        <div class="about-hero-left">
+                            <p class="about-eyebrow">PERSONAL PORTFOLIO</p>
+                            <h2 class="about-title">
+                                <span class="about-title-fill">关于本站</span>
+                                <span class="about-title-outline">寒枝可栖</span>
+                            </h2>
+                            <p class="about-desc">聚合 Python 运行、Markdown 编辑与 T显可视化——让开发与创作，变得简单高效。</p>
+                            <div class="about-btns">
+                                <button type="button" class="btn btn-dark" data-page="2">在线工具</button>
+                                <button type="button" class="btn btn-light" data-page="5">我的世界</button>
+                            </div>
+                        </div>
+                        <div class="about-hero-right">
+                            <div class="about-deco" aria-hidden="true">&lt;/&gt;</div>
+                        </div>
+                    </div>
+
+                    <div class="about-section">
+                        <div class="sec-head">
+                            <span class="sec-num">01</span>
+                            <h3 class="sec-title">技术栈</h3>
+                        </div>
+                        <div class="about-tech-grid">
+                            <div class="about-tech-card">
+                                <span class="about-tech-icon">🌐</span>
+                                <span class="about-tech-name">前端开发</span>
+                                <span class="about-tech-detail">HTML · CSS · JavaScript</span>
+                            </div>
+                            <div class="about-tech-card">
+                                <span class="about-tech-icon">🐍</span>
+                                <span class="about-tech-name">Python</span>
+                                <span class="about-tech-detail">Pyodide 在线运行</span>
+                            </div>
+                            <div class="about-tech-card">
+                                <span class="about-tech-icon">🚀</span>
+                                <span class="about-tech-name">部署</span>
+                                <span class="about-tech-detail">GitHub Pages · Cloudflare</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="about-section">
+                        <div class="sec-head">
+                            <span class="sec-num">02</span>
+                            <h3 class="sec-title">在线工具</h3>
+                        </div>
+                        <div class="about-tool-list">
+                            <div class="about-tool-item">
+                                <span class="about-tool-icon">🐍</span>
+                                <div class="about-tool-info">
+                                    <span class="about-tool-name">Python 在线运行</span>
+                                    <span class="about-tool-desc">基于 Pyodide，支持语法高亮与下载</span>
+                                </div>
+                            </div>
+                            <div class="about-tool-item">
+                                <span class="about-tool-icon">📝</span>
+                                <div class="about-tool-info">
+                                    <span class="about-tool-name">Markdown 编辑器</span>
+                                    <span class="about-tool-desc">实时预览、代码高亮、复制与下载</span>
+                                </div>
+                            </div>
+                            <div class="about-tool-item">
+                                <span class="about-tool-icon">🛠</span>
+                                <div class="about-tool-info">
+                                    <span class="about-tool-name">T显可视化编辑器</span>
+                                    <span class="about-tool-desc">基岩版 rawtext JSON 可视化构建</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="about-section">
+                        <div class="sec-head">
+                            <span class="sec-num">03</span>
+                            <h3 class="sec-title">关于我</h3>
+                        </div>
+                        <div class="about-bio">
+                            <p>寒枝可栖，一个热爱技术与创作的开发者。专注于前端开发、Python 编程与 Minecraft 命令系统。</p>
+                            <p>本站所有工具均在浏览器端运行，无需后端服务，代码开源透明。</p>
+                        </div>
+                        <div class="about-links">
+                            <button type="button" class="about-link-btn" id="aboutGithub">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.26.82-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.84 1.236 1.84 1.236 1.07 1.835 2.807 1.305 3.492.998.108-.776.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.3 1.23A11.5 11.5 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.218.694.825.576C20.565 21.795 24 17.298 24 12 24 5.37 18.627 0 12 0z"/></svg>
+                                GitHub
+                            </button>
+                            <button type="button" class="about-link-btn" id="aboutBilibili">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.511.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.266-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .355-.124.657-.373.906L17.813 4.653zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.786 1.894v7.52c.017.764.28 1.395.786 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.129.786-1.893v-7.52c-.017-.764-.28-1.396-.786-1.894-.507-.497-1.134-.755-1.88-.773H5.333zM8 11.107c.373 0 .684.124.933.373.25.249.382.569.4.96v1.173c-.018.391-.15.711-.4.96-.249.249-.56.373-.933.373s-.684-.124-.933-.373c-.25-.249-.382-.569-.4-.96v-1.173c.018-.391.15-.711.4-.96.249-.249.56-.373.933-.373zm8 0c.373 0 .684.124.933.373.25.249.382.569.4.96v1.173c-.018.391-.15.711-.4.96-.249.249-.56.373-.933.373s-.684-.124-.933-.373c-.25-.249-.382-.569-.4-.96v-1.173c.018-.391.15-.711.4-.96.249-.249.56-.373.933-.373z"/></svg>
+                                bilibili
+                            </button>
+                            <button type="button" class="about-link-btn" id="aboutBlog">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                                博客
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="about-section about-footer-note">
+                        <p>© 2026 寒枝可栖 · hanzkx.de5.net · All tools run in browser</p>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
-    <footer class="footer">
-        <div class="container footer-inner">
-            <div class="footer-left">
-                <button type="button" class="footer-link" id="footerAbout" title="关于我">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-                    <span class="footer-text">关于我</span>
-                </button>
-                <span class="footer-sep">·</span>
-                <button type="button" class="footer-link" id="footerGithub" title="GitHub">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.26.82-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.84 1.236 1.84 1.236 1.07 1.835 2.807 1.305 3.492.998.108-.776.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.3 1.23A11.5 11.5 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.29-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.218.694.825.576C20.565 21.795 24 17.298 24 12 24 5.37 18.627 0 12 0z"/></svg>
-                    <span class="footer-text">GitHub</span>
-                </button>
-                <span class="footer-sep">·</span>
-                <button type="button" class="footer-link" id="footerBilibili" title="bilibili">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.511.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.266-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .355-.124.657-.373.906L17.813 4.653zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.786 1.894v7.52c.017.764.28 1.395.786 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.129.786-1.893v-7.52c-.017-.764-.28-1.396-.786-1.894-.507-.497-1.134-.755-1.88-.773H5.333zM8 11.107c.373 0 .684.124.933.373.25.249.382.569.4.96v1.173c-.018.391-.15.711-.4.96-.249.249-.56.373-.933.373s-.684-.124-.933-.373c-.25-.249-.382-.569-.4-.96v-1.173c.018-.391.15-.711.4-.96.249-.249.56-.373.933-.373zm8 0c.373 0 .684.124.933.373.25.249.382.569.4.96v1.173c-.018.391-.15.711-.4.96-.249.249-.56.373-.933.373s-.684-.124-.933-.373c-.25-.249-.382-.569-.4-.96v-1.173c.018-.391.15-.711.4-.96.249-.249.56-.373.933-.373z"/></svg>
-                    <span class="footer-text">bilibili</span>
-                </button>
-            </div>
-            <button type="button" class="footer-top" id="backHome">回到首页 ↑</button>
-        </div>
-    </footer>
 
-    <!-- AI 浮动按钮 -->
-    <button class="ai-fab" id="aiFab" aria-label="AI 对话">
-        <svg viewBox="0 0 56 56" width="56" height="56">
-            <defs>
-                <linearGradient id="aiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#667eea"/>
-                    <stop offset="50%" stop-color="#764ba2"/>
-                    <stop offset="100%" stop-color="#f093fb"/>
-                </linearGradient>
-            </defs>
-            <circle cx="28" cy="28" r="26" fill="url(#aiGrad)"/>
-            <text x="28" y="35" text-anchor="middle" font-family="Arial,sans-serif" font-size="20" font-weight="700" fill="white">AI</text>
-        </svg>
-    </button>
-
-    <!-- AI 对话浮窗 -->
-    <div class="ai-chat" id="aiChat">
-        <div class="ai-chat-header">
-            <span class="ai-chat-title">AI 对话</span>
-            <button class="ai-chat-close" id="aiChatClose" aria-label="关闭">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-        </div>
-        <div class="ai-chat-messages" id="aiMessages">
-            <div class="ai-msg ai-msg-bot">
-                <div class="ai-msg-avatar">AI</div>
-                <div class="ai-msg-content">你好！我是你的 AI 助手，有什么可以帮你的吗？</div>
-            </div>
-        </div>
-        <div class="ai-chat-input-area">
-            <textarea id="aiInput" placeholder="输入消息..." rows="1"></textarea>
-            <button class="ai-send-btn" id="aiSend" aria-label="发送">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-            </button>
-        </div>
+    <!-- 页面底部版权 -->
+    <div class="page-footer" id="pageFooter">
+        <p>© 寒枝可栖 2026 保留所有权利.</p>
+        <p>第三方网站内容由其运营者负责，请自行判断，与本站无关.</p>
+        <p>本站已运行 <span id="runTime">0年 0月 0天</span> | v2.13.1</p>
     </div>
 
     <!-- 第三方库 -->
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 更新日志悬浮窗 -->
+    <div class="changelog-overlay" id="changelogOverlay">
+        <div class="changelog-modal">
+            <div class="changelog-header">
+                <div class="changelog-version">
+                    <span class="changelog-old-ver">v2.13</span>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                    <span class="changelog-new-ver">v2.13.1</span>
+                </div>
+                <button class="changelog-close-x" id="changelogCloseX" aria-label="关闭">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="changelog-body">
+                <ul class="changelog-list">
+                    <li><span class="changelog-tag changelog-tag-new">移除</span>移除"项目"页面及相关导航</li>
+                    <li><span class="changelog-tag changelog-tag-new">清理</span>移除项目数据与渲染逻辑，精简首页统计</li>
+                </ul>
+            </div>
+            <div class="changelog-footer">
+                <button class="changelog-close-btn" id="changelogCloseBtn">关闭</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 自定义脚本 -->
     <script src="tools.js"></script>
     <script src="home.js"></script>

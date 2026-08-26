@@ -4,24 +4,12 @@ let pyodideLoading = false;
 const PYODIDE_VERSION = '0.26.2';
 const PYODIDE_INDEX = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 
-const AI_CONFIG = {
-  apiUrl: 'https://api.hanzkx.de5.net',
-  model: 'glm-4.7-flash',
-  systemPrompt: '你是一个友好的 AI 助手，擅长回答编程、技术和日常问题。回答简洁明了，代码使用 Markdown 代码块格式。'
-};
-
-let chatHistory = [];
-let isWaiting = false;
-
 document.addEventListener('DOMContentLoaded', () => {
   initPythonHighlight();
   initPythonRunButton();
   initPythonDownloadButton();
   initMarkdownEditor();
   initMarkdownActions();
-  initChatToggle();
-  initChatInput();
-  initTDisplay();
   initTVisualEditor();
 });
 
@@ -258,211 +246,6 @@ function initMarkdownActions() {
       URL.revokeObjectURL(url);
     });
   }
-}
-
-function initChatToggle() {
-  const fab = document.getElementById('aiFab');
-  const chat = document.getElementById('aiChat');
-  const closeBtn = document.getElementById('aiChatClose');
-
-  if (fab && chat) {
-    fab.addEventListener('click', () => {
-      chat.classList.toggle('open');
-      if (chat.classList.contains('open')) {
-        const input = document.getElementById('aiInput');
-        if (input) setTimeout(() => input.focus(), 300);
-      }
-    });
-  }
-
-  if (closeBtn && chat) {
-    closeBtn.addEventListener('click', () => {
-      chat.classList.remove('open');
-    });
-  }
-}
-
-function initChatInput() {
-  const input = document.getElementById('aiInput');
-  const sendBtn = document.getElementById('aiSend');
-
-  if (!input || !sendBtn) return;
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
-
-  input.addEventListener('input', () => {
-    input.style.height = 'auto';
-    input.style.height = Math.min(input.scrollHeight, 100) + 'px';
-  });
-
-  sendBtn.addEventListener('click', sendMessage);
-}
-
-async function sendMessage() {
-  const input = document.getElementById('aiInput');
-  const sendBtn = document.getElementById('aiSend');
-
-  if (!input || isWaiting) return;
-
-  const text = input.value.trim();
-  if (!text) return;
-
-  input.value = '';
-  input.style.height = 'auto';
-
-  appendMessage('user', text);
-
-  chatHistory.push({ role: 'user', content: text });
-
-  const typingEl = showTyping();
-
-  isWaiting = true;
-  sendBtn.disabled = true;
-
-  try {
-    const response = await callGLMApi();
-
-    typingEl.remove();
-
-    chatHistory.push({ role: 'assistant', content: response });
-  } catch (err) {
-    typingEl.remove();
-    appendMessage('bot', '抱歉，发生了错误：' + (err.message || '未知错误'));
-  } finally {
-    isWaiting = false;
-    sendBtn.disabled = false;
-    input.focus();
-  }
-}
-
-async function callGLMApi() {
-  const messages = [
-    { role: 'system', content: AI_CONFIG.systemPrompt },
-    ...chatHistory.slice(-10)
-  ];
-
-  const response = await fetch(AI_CONFIG.apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: AI_CONFIG.model,
-      messages: messages,
-      stream: true,
-      temperature: 0.7
-    })
-  });
-
-  if (!response.ok) {
-    const errText = await response.text().catch(() => '');
-    throw new Error('API 返回 ' + response.status + ' ' + response.statusText + (errText ? ': ' + errText : ''));
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let fullText = '';
-  let buffer = '';
-
-  const messagesEl = document.getElementById('aiMessages');
-  const msgEl = document.createElement('div');
-  msgEl.className = 'ai-msg ai-msg-bot';
-  msgEl.innerHTML = '<div class="ai-msg-avatar">AI</div><div class="ai-msg-content"></div>';
-  messagesEl.appendChild(msgEl);
-  const contentEl = msgEl.querySelector('.ai-msg-content');
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-
-    const lines = buffer.split('\n');
-    buffer = lines.pop();
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || !trimmed.startsWith('data:')) continue;
-
-      const data = trimmed.slice(5).trim();
-      if (data === '[DONE]') continue;
-
-      try {
-        const json = JSON.parse(data);
-        const delta = json.choices?.[0]?.delta?.content || '';
-        if (delta) {
-          fullText += delta;
-          if (window.marked) {
-            contentEl.innerHTML = marked.parse(fullText);
-            if (window.Prism) {
-              contentEl.querySelectorAll('pre code').forEach(block => {
-                Prism.highlightElement(block);
-              });
-            }
-          } else {
-            contentEl.textContent = fullText;
-          }
-          messagesEl.scrollTop = messagesEl.scrollHeight;
-        }
-      } catch (e) {
-      }
-    }
-  }
-
-  if (!fullText) {
-    return '（空回复）';
-  }
-
-  return fullText;
-}
-
-function appendMessage(role, content) {
-  const messages = document.getElementById('aiMessages');
-  if (!messages) return;
-
-  const msgEl = document.createElement('div');
-  msgEl.className = 'ai-msg ai-msg-' + (role === 'user' ? 'user' : 'bot');
-
-  const avatar = document.createElement('div');
-  avatar.className = 'ai-msg-avatar';
-  avatar.textContent = role === 'user' ? '我' : 'AI';
-
-  const contentEl = document.createElement('div');
-  contentEl.className = 'ai-msg-content';
-
-  if (role === 'bot' && window.marked) {
-    contentEl.innerHTML = marked.parse(content);
-    if (window.Prism) {
-      contentEl.querySelectorAll('pre code').forEach(block => {
-        Prism.highlightElement(block);
-      });
-    }
-  } else {
-    contentEl.textContent = content;
-  }
-
-  msgEl.appendChild(avatar);
-  msgEl.appendChild(contentEl);
-  messages.appendChild(msgEl);
-
-  messages.scrollTop = messages.scrollHeight;
-}
-
-function showTyping() {
-  const messages = document.getElementById('aiMessages');
-  if (!messages) return document.createElement('div');
-
-  const el = document.createElement('div');
-  el.className = 'ai-msg ai-msg-bot';
-  el.innerHTML = '<div class="ai-msg-avatar">AI</div><div class="ai-msg-content"><div class="ai-typing"><span></span><span></span><span></span></div></div>';
-  messages.appendChild(el);
-  messages.scrollTop = messages.scrollHeight;
-  return el;
 }
 
 const MC_COLORS = {
@@ -889,36 +672,71 @@ function openModal(type, editIdx) {
 }
 
 function buildTvRawJSON() {
-  const rawtextArray = tvElements.map(el => {
+  const rawtextArray = [];
+  tvElements.forEach(el => {
     if (el.type === 'text') {
       const segments = parseMCText(el.content);
-      if (segments.length === 0) return { text: '' };
-      if (segments.length === 1) {
-        const s = segments[0];
-        const obj = { text: s.char };
-        if (MC_COLOR_NAMES[s.color]) obj.color = MC_COLOR_NAMES[s.color];
-        if (s.bold) obj.bold = true;
-        if (s.italic) obj.italic = true;
-        if (s.underlined) obj.underlined = true;
-        if (s.strikethrough) obj.strikethrough = true;
-        return obj;
+      if (segments.length === 0) {
+        rawtextArray.push({ text: '' });
+      } else {
+        let currentText = '';
+        let currentColor = null;
+        let currentFmt = {};
+
+        segments.forEach(s => {
+          const colorChanged = currentColor !== s.color;
+          const fmtChanged =
+            !!s.bold !== !!currentFmt.bold ||
+            !!s.italic !== !!currentFmt.italic ||
+            !!s.underlined !== !!currentFmt.underlined ||
+            !!s.strikethrough !== !!currentFmt.strikethrough;
+
+          if ((currentColor !== null && (colorChanged || fmtChanged)) || s.newline) {
+            if (currentText) {
+              const obj = { text: currentText };
+              if (MC_COLOR_NAMES[currentColor]) obj.color = MC_COLOR_NAMES[currentColor];
+              if (currentFmt.bold) obj.bold = true;
+              if (currentFmt.italic) obj.italic = true;
+              if (currentFmt.underlined) obj.underlined = true;
+              if (currentFmt.strikethrough) obj.strikethrough = true;
+              rawtextArray.push(obj);
+            }
+            if (s.newline) {
+              rawtextArray.push({ text: '\n' });
+              currentText = '';
+            } else {
+              currentText = s.char;
+            }
+            currentColor = s.color;
+            currentFmt = { ...s };
+            delete currentFmt.char;
+            delete currentFmt.color;
+            delete currentFmt.newline;
+          } else {
+            currentText += s.char;
+            currentColor = s.color;
+            currentFmt = { ...s };
+            delete currentFmt.char;
+            delete currentFmt.color;
+            delete currentFmt.newline;
+          }
+        });
+
+        if (currentText) {
+          const obj = { text: currentText };
+          if (MC_COLOR_NAMES[currentColor]) obj.color = MC_COLOR_NAMES[currentColor];
+          if (currentFmt.bold) obj.bold = true;
+          if (currentFmt.italic) obj.italic = true;
+          if (currentFmt.underlined) obj.underlined = true;
+          if (currentFmt.strikethrough) obj.strikethrough = true;
+          rawtextArray.push(obj);
+        }
       }
-      const extra = segments.map(s => {
-        const obj = { text: s.char };
-        if (MC_COLOR_NAMES[s.color]) obj.color = MC_COLOR_NAMES[s.color];
-        if (s.bold) obj.bold = true;
-        if (s.italic) obj.italic = true;
-        if (s.underlined) obj.underlined = true;
-        if (s.strikethrough) obj.strikethrough = true;
-        return obj;
-      });
-      return { text: '', extra };
     } else if (el.type === 'selector') {
-      return { selector: el.content };
+      rawtextArray.push({ selector: el.content });
     } else if (el.type === 'score') {
-      return { score: { name: el.content, objective: el.objective } };
+      rawtextArray.push({ score: { name: el.content, objective: el.objective } });
     }
-    return { text: '' };
   });
 
   return { rawtext: rawtextArray };
