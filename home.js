@@ -81,18 +81,6 @@ function switchPage(index) {
   if (sidebar && window.innerWidth <= 768) {
     sidebar.classList.remove('open');
   }
-
-  const aiFab = document.getElementById('aiFab');
-  if (aiFab) {
-    aiFab.classList.toggle('show', index === 2);
-  }
-
-  if (index !== 2) {
-    const aiChat = document.getElementById('aiChat');
-    if (aiChat) {
-      aiChat.classList.remove('open');
-    }
-  }
 }
 
 function initDropdowns() {
@@ -153,9 +141,19 @@ function initSidebar() {
   }
 }
 
-const CHANGELOG_VERSION = '2.40';
+const CHANGELOG_VERSION = '2.41';
 
 const CHANGELOG_DATA = [
+  {
+    version: '2.41',
+    date: '2026-08-28',
+    items: [
+      { type: '移除', tag: 'del', text: '去除 AI 对话功能，删除浮动按钮、对话浮窗及相关代码' },
+      { type: '优化', tag: 'optimize', text: '导航栏去除"设置"项，仅保留底部设置图标' },
+      { type: '更换', tag: 'replace', text: '更换博客图标为书本样式 SVG path' },
+      { type: '新增', tag: 'new', text: '所有在线工具支持导入文件并解析（Python 导入 .py，Markdown 导入 .md）' }
+    ]
+  },
   {
     version: '2.40',
     date: '2026-08-28',

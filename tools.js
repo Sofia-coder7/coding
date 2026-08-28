@@ -2,10 +2,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initPythonHighlight();
   initPythonRunButton();
   initPythonDownloadButton();
+  initPythonImportButton();
   initMarkdownEditor();
   initMarkdownActions();
-  initChatToggle();
-  initChatInput();
+  initMarkdownImportButton();
 });
 
 function initPythonDownloadButton() {
@@ -1116,212 +1116,55 @@ function initMarkdownActions() {
   }
 }
 
-function initChatToggle() {
-  const fab = document.getElementById('aiFab');
-  const chat = document.getElementById('aiChat');
-  const closeBtn = document.getElementById('aiChatClose');
+function initPythonImportButton() {
+  const importBtn = document.getElementById('pyImport');
+  const fileInput = document.getElementById('pyImportFile');
+  const codeArea = document.getElementById('pyCode');
+  const highlight = document.getElementById('pyHighlight');
 
-  if (fab && chat) {
-    fab.addEventListener('click', () => {
-      chat.classList.toggle('open');
-      if (chat.classList.contains('open')) {
-        const input = document.getElementById('aiInput');
-        if (input) setTimeout(() => input.focus(), 300);
-      }
-    });
-  }
+  if (!importBtn || !fileInput || !codeArea) return;
 
-  if (closeBtn && chat) {
-    closeBtn.addEventListener('click', () => {
-      chat.classList.remove('open');
-    });
-  }
-}
+  importBtn.addEventListener('click', () => fileInput.click());
 
-function initChatInput() {
-  const input = document.getElementById('aiInput');
-  const sendBtn = document.getElementById('aiSend');
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  if (!input || !sendBtn) return;
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
-
-  input.addEventListener('input', () => {
-    input.style.height = 'auto';
-    input.style.height = Math.min(input.scrollHeight, 100) + 'px';
-  });
-
-  sendBtn.addEventListener('click', sendMessage);
-}
-
-const AI_CONFIG = {
-  apiUrl: 'https://api.sofia-coder7.github.io',
-  model: 'glm-4.7-flash',
-  systemPrompt: '你是一个友好的 AI 助手，擅长回答编程、技术和日常问题。回答简洁明了，代码使用 Markdown 代码块格式。'
-};
-
-let chatHistory = [];
-let isWaiting = false;
-
-async function sendMessage() {
-  const input = document.getElementById('aiInput');
-  const sendBtn = document.getElementById('aiSend');
-
-  if (!input || isWaiting) return;
-
-  const text = input.value.trim();
-  if (!text) return;
-
-  input.value = '';
-  input.style.height = 'auto';
-
-  appendMessage('user', text);
-  chatHistory.push({ role: 'user', content: text });
-
-  const typingEl = showTyping();
-  isWaiting = true;
-  sendBtn.disabled = true;
-
-  try {
-    const response = await callGLMApi();
-    typingEl.remove();
-    chatHistory.push({ role: 'assistant', content: response });
-  } catch (err) {
-    typingEl.remove();
-    appendMessage('bot', '抱歉，发生了错误：' + (err.message || '未知错误'));
-  } finally {
-    isWaiting = false;
-    sendBtn.disabled = false;
-    input.focus();
-  }
-}
-
-async function callGLMApi() {
-  const messages = [
-    { role: 'system', content: AI_CONFIG.systemPrompt },
-    ...chatHistory.slice(-10)
-  ];
-
-  const response = await fetch(AI_CONFIG.apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: AI_CONFIG.model,
-      messages: messages,
-      stream: true,
-      temperature: 0.7
-    })
-  });
-
-  if (!response.ok) {
-    const errText = await response.text().catch(() => '');
-    throw new Error('API 返回 ' + response.status + ' ' + response.statusText + (errText ? ': ' + errText : ''));
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let fullText = '';
-  let buffer = '';
-
-  const messagesEl = document.getElementById('aiMessages');
-  const msgEl = document.createElement('div');
-  msgEl.className = 'ai-msg ai-msg-bot';
-  msgEl.innerHTML = '<div class="ai-msg-avatar">AI</div><div class="ai-msg-content"></div>';
-  messagesEl.appendChild(msgEl);
-  const contentEl = msgEl.querySelector('.ai-msg-content');
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop();
-
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || !trimmed.startsWith('data:')) continue;
-      const data = trimmed.slice(5).trim();
-      if (data === '[DONE]') continue;
-
-      try {
-        const json = JSON.parse(data);
-        const delta = json.choices?.[0]?.delta?.content || '';
-        if (delta) {
-          fullText += delta;
-          if (window.marked) {
-            contentEl.innerHTML = marked.parse(fullText);
-            if (window.Prism) {
-              contentEl.querySelectorAll('pre code').forEach(block => {
-                Prism.highlightElement(block);
-              });
-            }
-          } else {
-            contentEl.textContent = fullText;
-          }
-          messagesEl.scrollTop = messagesEl.scrollHeight;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      codeArea.value = ev.target.result;
+      if (highlight) {
+        const codeEl = highlight.querySelector('code');
+        if (codeEl) {
+          codeEl.textContent = codeArea.value + '\n';
+          if (window.Prism) Prism.highlightElement(codeEl);
         }
-      } catch (e) {}
-    }
-  }
-
-  return fullText || '（空回复）';
+      }
+    };
+    reader.readAsText(file);
+    fileInput.value = '';
+  });
 }
 
-function appendMessage(role, content) {
-  const messages = document.getElementById('aiMessages');
-  if (!messages) return;
+function initMarkdownImportButton() {
+  const importBtn = document.getElementById('mdImport');
+  const fileInput = document.getElementById('mdImportFile');
+  const codeArea = document.getElementById('mdCode');
 
-  const msgEl = document.createElement('div');
-  msgEl.className = 'ai-msg ai-msg-' + (role === 'user' ? 'user' : 'bot');
+  if (!importBtn || !fileInput || !codeArea) return;
 
-  const avatar = document.createElement('div');
-  avatar.className = 'ai-msg-avatar';
-  avatar.textContent = role === 'user' ? '我' : 'AI';
+  importBtn.addEventListener('click', () => fileInput.click());
 
-  const contentEl = document.createElement('div');
-  contentEl.className = 'ai-msg-content';
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  if (role === 'bot' && window.marked) {
-    contentEl.innerHTML = marked.parse(content);
-    if (window.Prism) {
-      contentEl.querySelectorAll('pre code').forEach(block => {
-        Prism.highlightElement(block);
-      });
-    }
-  } else {
-    contentEl.textContent = content;
-  }
-
-  msgEl.appendChild(avatar);
-  msgEl.appendChild(contentEl);
-  messages.appendChild(msgEl);
-  messages.scrollTop = messages.scrollHeight;
-}
-
-function showTyping() {
-  const messages = document.getElementById('aiMessages');
-  if (!messages) return document.createElement('div');
-
-  const el = document.createElement('div');
-  el.className = 'ai-msg ai-msg-bot';
-  el.innerHTML = '<div class="ai-msg-avatar">AI</div><div class="ai-msg-content"><div class="ai-typing"><span></span><span></span><span></span></div></div>';
-  messages.appendChild(el);
-  messages.scrollTop = messages.scrollHeight;
-  return el;
-}
-
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-function escapeAttr(str) {
-  return str.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      codeArea.value = ev.target.result;
+      codeArea.dispatchEvent(new Event('input'));
+    };
+    reader.readAsText(file);
+    fileInput.value = '';
+  });
 }
