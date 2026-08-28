@@ -72,9 +72,7 @@ function initPythonRunButton() {
    内置 Python 预览引擎 — 不依赖 Pyodide
    支持：变量赋值、print()、f-string、for/range、while/break、
          if/elif/else、try/except、函数定义/调用、input()、
-         random.randint/choice、import（忽略）、注释、算术、
-         class 类定义/实例化/方法、self 属性、字典/列表/字符串方法、
-         元组解包、round()、time.time()
+         random.randint/choice、import（忽略）、注释、算术
    递归 async 架构，支持任意嵌套
    ================================================================ */
 
@@ -127,28 +125,6 @@ function stripComment(line) {
   return line;
 }
 
-function processEscapes(str) {
-  let result = '';
-  for (let i = 0; i < str.length; i++) {
-    if (str[i] === '\\' && i + 1 < str.length) {
-      const next = str[i + 1];
-      switch (next) {
-        case 'n': result += '\n'; i++; break;
-        case 't': result += '\t'; i++; break;
-        case 'r': result += '\r'; i++; break;
-        case '\\': result += '\\'; i++; break;
-        case '"': result += '"'; i++; break;
-        case "'": result += "'"; i++; break;
-        case '0': result += '\0'; i++; break;
-        default: result += next; i++; break;
-      }
-    } else {
-      result += str[i];
-    }
-  }
-  return result;
-}
-
 function getIndent(line) {
   const m = line.match(/^(\s*)/);
   return m ? m[1].length : 0;
@@ -179,19 +155,35 @@ async function execPythonPreview(code, outputEl) {
   let error = null;
   let returnVal = undefined;
   let hasReturn = false;
+  let selfObj = null;
 
-  vars['time'] = { time: () => Date.now() / 1000 };
-
-  function appendOutput(text) {
-    const parts = String(text).split('\n');
-    for (let i = 0; i < parts.length; i++) {
-      if (parts[i] !== '') {
-        outputEl.appendChild(document.createTextNode(parts[i]));
-      }
-      if (i < parts.length - 1) {
-        outputEl.appendChild(document.createElement('br'));
+  // 内置模块模拟
+  vars['time'] = { __isModule__: true, time: () => Date.now() / 1000 };
+  vars['datetime'] = {
+    __isModule__: true,
+    datetime: {
+      __isClass__: true,
+      now: () => {
+        const d = new Date();
+        return {
+          __isDatetime__: true,
+          strftime: (fmt) => {
+            const pad = (n) => String(n).padStart(2, '0');
+            return fmt
+              .replace(/%Y/g, d.getFullYear())
+              .replace(/%m/g, pad(d.getMonth() + 1))
+              .replace(/%d/g, pad(d.getDate()))
+              .replace(/%H/g, pad(d.getHours()))
+              .replace(/%M/g, pad(d.getMinutes()))
+              .replace(/%S/g, pad(d.getSeconds()));
+          }
+        };
       }
     }
+  };
+
+  function appendOutput(text) {
+    outputEl.appendChild(document.createTextNode(text));
     hasOutput = true;
   }
 
@@ -218,45 +210,176 @@ async function execPythonPreview(code, outputEl) {
     });
   }
 
-  function isPyObj(v) {
-    return v && typeof v === 'object' && v.__class__ && v.__attrs__ !== undefined;
+  function unescapeStr(s) {
+    return s.replace(/\\n/g, '\n')
+            .replace(/\\t/g, '\t')
+            .replace(/\\r/g, '\r')
+            .replace(/\\'/g, "'")
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\');
   }
 
-  async function createInstance(className) {
+  function createInstance(className, args) {
     const cls = classes[className];
     if (!cls) return undefined;
-    const obj = { __class__: className, __attrs__: {} };
+    const obj = { __class__: className, __dict__: {} };
+    // 复制类属性
+    for (const k in cls.classVars) {
+      obj.__dict__[k] = cls.classVars[k];
+    }
+    // 如果有 __init__ 方法，调用它
     if (cls.methods['__init__']) {
-      await callMethod(obj, '__init__', []);
+      const savedSelf = selfObj;
+      selfObj = obj;
+      const savedVars = { ...vars };
+      cls.methods['__init__'].params.forEach((p, i) => {
+        if (p === 'self') return;
+        vars[p] = args[i - 1] !== undefined ? args[i - 1] : undefined;
+      });
+      hasReturn = false;
+      returnVal = undefined;
+      execFromSync(cls.methods['__init__'].bodyStart, cls.methods['__init__'].bodyIndent);
+      Object.keys(vars).forEach(k => { if (!(k in savedVars)) delete vars[k]; });
+      Object.assign(vars, savedVars);
+      selfObj = savedSelf;
     }
     return obj;
   }
 
-  async function callMethod(obj, methodName, args) {
+  function getAttr(obj, attr) {
+    if (obj && typeof obj === 'object' && obj.__class__ && obj.__dict__) {
+      if (attr in obj.__dict__) return obj.__dict__[attr];
+      const cls = classes[obj.__class__];
+      if (cls && cls.methods[attr]) {
+        return { __method__: true, obj, name: attr };
+      }
+      return undefined;
+    }
+    return undefined;
+  }
+
+  function setAttr(obj, attr, value) {
+    if (obj && typeof obj === 'object' && obj.__dict__) {
+      obj.__dict__[attr] = value;
+    }
+  }
+
+  function execFromSync(startIdx, endIndent) {
+    // 同步版本的 execFrom（用于 __init__ 等简单方法，不支持 input）
+    let i = startIdx;
+    while (i < lines.length) {
+      const raw = lines[i];
+      if (raw.trim() === '' || raw.trim().startsWith('#')) { i++; continue; }
+      const indent = getIndent(raw);
+      if (indent <= endIndent) break;
+      const trimmed = raw.trim();
+
+      if (trimmed.startsWith('import ') || trimmed.startsWith('from ')) { i++; continue; }
+      if (trimmed === 'return') { hasReturn = true; break; }
+      if (trimmed.startsWith('return ')) {
+        returnVal = evalExpr(trimmed.slice(7).trim());
+        hasReturn = true;
+        break;
+      }
+
+      if (trimmed.startsWith('print(') && trimmed.endsWith(')')) {
+        const argsStr = trimmed.slice(6, -1);
+        const mainArgs = argsStr.replace(/sep\s*=\s*(['"]).*?\1,?/g, '').replace(/end\s*=\s*(['"]).*?\1,?/g, '').trim();
+        if (mainArgs.endsWith(',')) mainArgs = mainArgs.slice(0, -1);
+        const parts = mainArgs ? splitTopLevel(mainArgs, ',') : [];
+        const vals = parts.map(a => evalExpr(a.trim()));
+        appendOutput(vals.join(' ') + '\n');
+        i++;
+        continue;
+      }
+
+      const selfAssignMatch = trimmed.match(/^self\.(\w+)\s*=(?!=)\s*(.+)$/);
+      if (selfAssignMatch && selfObj) {
+        setAttr(selfObj, selfAssignMatch[1], evalExpr(selfAssignMatch[2]));
+        i++;
+        continue;
+      }
+
+      const assignMatch = trimmed.match(/^(\w+)\s*=(?!=)\s*(.+)$/);
+      if (assignMatch) {
+        vars[assignMatch[1]] = evalExpr(assignMatch[2]);
+        i++;
+        continue;
+      }
+
+      // 方法调用语句: self.method(args) 或 obj.method(args)
+      const methodStmtMatch = trimmed.match(/^(\w+(?:\.\w+)*)\((.*)\)$/);
+      if (methodStmtMatch) {
+        const fullExpr = methodStmtMatch[1];
+        const argsStr = methodStmtMatch[2];
+        if (fullExpr.includes('.')) {
+          const dotIdx = fullExpr.lastIndexOf('.');
+          const objExpr = fullExpr.slice(0, dotIdx);
+          const methodName = fullExpr.slice(dotIdx + 1);
+          const obj = evalExpr(objExpr);
+          if (obj && typeof obj === 'object' && obj.__class__) {
+            const args = argsStr ? splitTopLevel(argsStr, ',').map(a => evalExpr(a.trim())) : [];
+            callMethodSync(obj, methodName, args);
+            i++;
+            continue;
+          }
+        }
+      }
+
+      i++;
+    }
+  }
+
+  function callMethodSync(obj, methodName, args) {
     const cls = classes[obj.__class__];
-    if (!cls) return undefined;
+    if (!cls || !cls.methods[methodName]) return undefined;
     const method = cls.methods[methodName];
-    if (!method) return undefined;
+    const savedSelf = selfObj;
+    selfObj = obj;
     const savedVars = { ...vars };
-    vars['self'] = obj;
-    method.params.slice(1).forEach((p, i) => { vars[p] = args[i]; });
+    method.params.forEach((p, i) => {
+      if (p === 'self') return;
+      vars[p] = args[i - 1] !== undefined ? args[i - 1] : undefined;
+    });
+    hasReturn = false;
+    returnVal = undefined;
+    execFromSync(method.bodyStart, method.bodyIndent);
+    const result = hasReturn ? returnVal : undefined;
+    Object.keys(vars).forEach(k => { if (!(k in savedVars)) delete vars[k]; });
+    Object.assign(vars, savedVars);
+    selfObj = savedSelf;
+    return result;
+  }
+
+  async function callMethodAsync(obj, methodName, args) {
+    const cls = classes[obj.__class__];
+    if (!cls || !cls.methods[methodName]) return undefined;
+    const method = cls.methods[methodName];
+    const savedSelf = selfObj;
+    selfObj = obj;
+    const savedVars = { ...vars };
+    method.params.forEach((p, i) => {
+      if (p === 'self') return;
+      vars[p] = args[i - 1] !== undefined ? args[i - 1] : undefined;
+    });
     hasReturn = false;
     returnVal = undefined;
     await execFrom(method.bodyStart, method.bodyIndent);
     const result = hasReturn ? returnVal : undefined;
     Object.keys(vars).forEach(k => { if (!(k in savedVars)) delete vars[k]; });
     Object.assign(vars, savedVars);
+    selfObj = savedSelf;
     return result;
   }
 
-  async function evalExpr(expr) {
+  function evalExpr(expr) {
     expr = expr.trim();
     if (!expr) return '';
 
     if (expr.startsWith("f'") || expr.startsWith('f"')) return evalFString(expr);
     if (expr.startsWith("'") || expr.startsWith('"')) {
       const m = expr.match(/^(['"])((?:.|\n)*?)\1$/);
-      return m ? processEscapes(m[2]) : expr;
+      return m ? unescapeStr(m[2]) : expr;
     }
     if (expr === 'True') return true;
     if (expr === 'False') return false;
@@ -265,48 +388,45 @@ async function execPythonPreview(code, outputEl) {
     if (/^-?\d+\.\d+$/.test(expr)) return parseFloat(expr);
 
     if (expr.startsWith('random.randint(') && expr.endsWith(')')) {
-      const args = expr.slice(15, -1).split(',').map(a => Number(await evalExpr(a.trim())));
+      const args = expr.slice(15, -1).split(',').map(a => Number(evalExpr(a.trim())));
       return Math.floor(Math.random() * (args[1] - args[0] + 1)) + args[0];
     }
     if (expr.startsWith('random.choice(') && expr.endsWith(')')) {
       const listStr = expr.slice(14, -1);
       const items = listStr.split(',').map(a => evalExpr(a.trim()));
-      const resolved = await Promise.all(items);
-      return resolved[Math.floor(Math.random() * resolved.length)];
+      return items[Math.floor(Math.random() * items.length)];
     }
     if (expr.startsWith('len(') && expr.endsWith(')')) {
-      const v = await evalExpr(expr.slice(4, -1).trim());
-      return Array.isArray(v) ? v.length : String(v).length;
+      const v = evalExpr(expr.slice(4, -1).trim());
+      if (Array.isArray(v)) return v.length;
+      if (v && typeof v === 'object' && v.__isDict__) return Object.keys(v).filter(k => k !== '__isDict__').length;
+      return String(v).length;
     }
     if (expr.startsWith('int(') && expr.endsWith(')')) {
-      const v = await evalExpr(expr.slice(4, -1).trim());
+      const v = evalExpr(expr.slice(4, -1).trim());
       const num = parseInt(String(v).trim());
       if (isNaN(num)) throw new Error('ValueError: invalid literal for int(): ' + v);
       return num;
     }
     if (expr.startsWith('str(') && expr.endsWith(')')) {
-      return String(await evalExpr(expr.slice(4, -1).trim()));
+      return String(evalExpr(expr.slice(4, -1).trim()));
     }
     if (expr.startsWith('float(') && expr.endsWith(')')) {
-      const num = parseFloat(await evalExpr(expr.slice(6, -1).trim()));
+      const num = parseFloat(evalExpr(expr.slice(6, -1).trim()));
       if (isNaN(num)) throw new Error('ValueError: could not convert to float');
       return num;
     }
     if (expr.startsWith('abs(') && expr.endsWith(')')) {
-      return Math.abs(Number(await evalExpr(expr.slice(4, -1).trim())));
+      return Math.abs(Number(evalExpr(expr.slice(4, -1).trim())));
     }
     if (expr.startsWith('round(') && expr.endsWith(')')) {
-      const argStr = expr.slice(6, -1);
-      const parts = splitTopLevel(argStr, ',');
-      const num = Number(await evalExpr(parts[0].trim()));
-      const digits = parts.length > 1 ? parseInt(await evalExpr(parts[1].trim())) : 0;
-      return Number(num.toFixed(digits));
+      const args = expr.slice(6, -1).split(',');
+      const num = Number(evalExpr(args[0].trim()));
+      const decimals = args[1] ? parseInt(evalExpr(args[1].trim())) : 0;
+      return Number(num.toFixed(decimals));
     }
     if (expr.startsWith('range(') && expr.endsWith(')')) {
-      const argStr = expr.slice(6, -1);
-      const argParts = splitTopLevel(argStr, ',');
-      const args = [];
-      for (const a of argParts) args.push(Number(await evalExpr(a.trim())));
+      const args = expr.slice(6, -1).split(',').map(a => Number(evalExpr(a.trim())));
       const start = args.length > 1 ? args[0] : 0;
       const end = args.length > 1 ? args[1] : args[0];
       const step = args.length > 2 ? args[2] : 1;
@@ -315,189 +435,42 @@ async function execPythonPreview(code, outputEl) {
       return arr;
     }
 
-    if (expr.startsWith('input(') && expr.endsWith(')')) {
-      const arg = expr.slice(6, -1).trim();
-      const promptText = arg ? String(await evalExpr(arg)) : '';
-      return await getInput(promptText);
-    }
-
     if (expr.startsWith('[') && expr.endsWith(']')) {
       const inner = expr.slice(1, -1).trim();
       if (!inner) return [];
-      const parts = splitTopLevel(inner, ',');
-      const result = [];
-      for (const p of parts) result.push(await evalExpr(p.trim()));
-      return result;
+      return splitTopLevel(inner, ',').map(a => evalExpr(a.trim()));
     }
 
+    // 字典字面量 {key: value, ...}
     if (expr.startsWith('{') && expr.endsWith('}')) {
       const inner = expr.slice(1, -1).trim();
-      if (!inner) return {};
       const dict = {};
+      dict.__isDict__ = true;
+      if (!inner) return dict;
       const pairs = splitTopLevel(inner, ',');
       for (const pair of pairs) {
-        const kv = splitTopLevel(pair.trim(), ':');
-        if (kv.length >= 2) {
-          const k = await evalExpr(kv[0].trim());
-          const v = await evalExpr(kv.slice(1).join(':').trim());
-          dict[k] = v;
+        const colonIdx = pair.indexOf(':');
+        if (colonIdx > 0) {
+          const key = evalExpr(pair.slice(0, colonIdx).trim());
+          const val = evalExpr(pair.slice(colonIdx + 1).trim());
+          dict[String(key)] = val;
         }
       }
       return dict;
     }
 
-    const bracketMatch = expr.match(/^(\w+)\[(.+)\]$/);
-    if (bracketMatch) {
-      const obj = await evalExpr(bracketMatch[1]);
-      const key = await evalExpr(bracketMatch[2].trim());
-      if (obj && typeof obj === 'object') return obj[key];
-      return undefined;
-    }
-
-    const dotBracketMatch = expr.match(/^(\w+)\.(\w+)\[(.+)\]$/);
-    if (dotBracketMatch) {
-      const baseObj = await evalExpr(dotBracketMatch[1]);
-      let attrVal;
-      if (isPyObj(baseObj)) {
-        const attrName = dotBracketMatch[2];
-        if (attrName in baseObj.__attrs__) attrVal = baseObj.__attrs__[attrName];
-        else {
-          const cls = classes[baseObj.__class__];
-          if (cls && cls.classVars && attrName in cls.classVars) attrVal = cls.classVars[attrName];
-        }
-      } else if (baseObj && typeof baseObj === 'object') {
-        attrVal = baseObj[dotBracketMatch[2]];
-      }
-      const key = await evalExpr(dotBracketMatch[3].trim());
-      if (attrVal && typeof attrVal === 'object') return attrVal[key];
-      return undefined;
-    }
-
-    const dotCallMatch = expr.match(/^(\w+)\.(\w+)\((.*)\)$/);
-    if (dotCallMatch) {
-      const objName = dotCallMatch[1];
-      const methodName = dotCallMatch[2];
-      const argStr = dotCallMatch[3];
-      const argParts = argStr ? splitTopLevel(argStr, ',') : [];
-      const args = [];
-      for (const a of argParts) args.push(await evalExpr(a.trim()));
-      const obj = vars[objName];
-
-      if (isPyObj(obj)) {
-        return await callMethod(obj, methodName, args);
-      }
-
-      if (obj && typeof obj === 'object' && typeof obj[methodName] === 'function') {
-        return obj[methodName](...args);
-      }
-
-      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
-        if (methodName === 'get') {
-          const key = args[0];
-          const def = args.length > 1 ? args[1] : undefined;
-          return obj.hasOwnProperty(key) ? obj[key] : def;
-        }
-        if (methodName === 'keys') return Object.keys(obj);
-        if (methodName === 'values') return Object.values(obj);
-        if (methodName === 'items') {
-          return Object.entries(obj).map(([k, v]) => [k, v]);
-        }
-      }
-
-      if (typeof obj === 'string') {
-        if (methodName === 'strip') return obj.trim();
-        if (methodName === 'lower') return obj.toLowerCase();
-        if (methodName === 'upper') return obj.toUpperCase();
-        if (methodName === 'startswith') return obj.startsWith(String(args[0]));
-        if (methodName === 'endswith') return obj.endsWith(String(args[0]));
-        if (methodName === 'split') {
-          const sep = args.length > 0 ? String(args[0]) : undefined;
-          return obj.split(sep);
-        }
-        if (methodName === 'replace') return obj.split(String(args[0])).join(String(args[1]));
-      }
-
-      if (Array.isArray(obj)) {
-        if (methodName === 'append') { obj.push(args[0]); return undefined; }
-        if (methodName === 'pop') return obj.pop();
-        if (methodName === 'len' || methodName === 'length') return obj.length;
-        if (methodName === 'indexOf' || methodName === 'index') return obj.indexOf(args[0]);
-      }
-
-      return undefined;
-    }
-
-    const dotAttrCallMatch = expr.match(/^(\w+)\.(\w+)\.(\w+)\((.*)\)$/);
-    if (dotAttrCallMatch) {
-      const baseObj = vars[dotAttrCallMatch[1]];
-      const attrName = dotAttrCallMatch[2];
-      const methodName = dotAttrCallMatch[3];
-      const argStr = dotAttrCallMatch[4];
-      const argParts = argStr ? splitTopLevel(argStr, ',') : [];
-      const args = [];
-      for (const a of argParts) args.push(await evalExpr(a.trim()));
-
-      let attrVal;
-      if (isPyObj(baseObj)) {
-        if (attrName in baseObj.__attrs__) attrVal = baseObj.__attrs__[attrName];
-        else {
-          const cls = classes[baseObj.__class__];
-          if (cls && cls.classVars && attrName in cls.classVars) attrVal = cls.classVars[attrName];
-        }
-      } else if (baseObj && typeof baseObj === 'object') {
-        attrVal = baseObj[attrName];
-      }
-
-      if (attrVal && typeof attrVal === 'object' && !Array.isArray(attrVal)) {
-        if (methodName === 'get') {
-          const key = args[0];
-          const def = args.length > 1 ? args[1] : undefined;
-          return attrVal.hasOwnProperty(key) ? attrVal[key] : def;
-        }
-      }
-      if (Array.isArray(attrVal)) {
-        if (methodName === 'append') { attrVal.push(args[0]); return undefined; }
-        if (methodName === 'pop') return attrVal.pop();
-      }
-
-      return undefined;
-    }
-
-    const dotAttrMatch = expr.match(/^(\w+)\.(\w+)$/);
-    if (dotAttrMatch) {
-      const obj = vars[dotAttrMatch[1]];
-      if (isPyObj(obj)) {
-        const attrName = dotAttrMatch[2];
-        if (attrName in obj.__attrs__) return obj.__attrs__[attrName];
-        const cls = classes[obj.__class__];
-        if (cls && cls.classVars && attrName in cls.classVars) return cls.classVars[attrName];
-        return undefined;
-      }
-      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
-        return obj[dotAttrMatch[2]];
-      }
-    }
-
     if (expr.includes(' and ')) {
-      const parts = expr.split(' and ');
-      for (const p of parts) {
-        if (!await evalExpr(p.trim())) return false;
-      }
-      return true;
+      return expr.split(' and ').every(p => !!evalExpr(p.trim()));
     }
     if (expr.includes(' or ')) {
-      const parts = expr.split(' or ');
-      for (const p of parts) {
-        if (await evalExpr(p.trim())) return true;
-      }
-      return false;
+      return expr.split(' or ').some(p => !!evalExpr(p.trim()));
     }
-    if (expr.startsWith('not ')) return !await evalExpr(expr.slice(4).trim());
+    if (expr.startsWith('not ')) return !evalExpr(expr.slice(4).trim());
 
     const compMatch = expr.match(/^(.+?)\s*(==|!=|<=|>=|<|>)\s*(.+)$/);
     if (compMatch) {
-      const a = await evalExpr(compMatch[1].trim());
-      const b = await evalExpr(compMatch[3].trim());
+      const a = evalExpr(compMatch[1].trim());
+      const b = evalExpr(compMatch[3].trim());
       switch (compMatch[2]) {
         case '==': return a == b;
         case '!=': return a != b;
@@ -511,8 +484,7 @@ async function execPythonPreview(code, outputEl) {
     if (expr.includes('+')) {
       const parts = splitTopLevel(expr, '+');
       if (parts.length > 1) {
-        const vals = [];
-        for (const p of parts) vals.push(await evalExpr(p.trim()));
+        const vals = parts.map(p => evalExpr(p.trim()));
         const allNum = vals.every(v => typeof v === 'number' || /^-?\d+(\.\d+)?$/.test(String(v)));
         return allNum ? vals.reduce((a, b) => a + Number(b), 0) : vals.map(v => String(v)).join('');
       }
@@ -520,52 +492,146 @@ async function execPythonPreview(code, outputEl) {
     if (expr.includes('-')) {
       const parts = splitTopLevel(expr, '-');
       if (parts.length > 1) {
-        const vals = [];
-        for (const p of parts) vals.push(Number(await evalExpr(p.trim())));
+        const vals = parts.map(p => Number(evalExpr(p.trim())));
         if (vals.every(v => !isNaN(v))) return vals.reduce((a, b) => a - b);
       }
     }
     if (expr.includes('*')) {
       const parts = splitTopLevel(expr, '*');
       if (parts.length > 1) {
-        const vals = [];
-        for (const p of parts) vals.push(Number(await evalExpr(p.trim())));
+        const vals = parts.map(p => Number(evalExpr(p.trim())));
         if (vals.every(v => !isNaN(v))) return vals.reduce((a, b) => a * b);
       }
     }
 
-    if (classes[expr]) return await createInstance(expr);
+    // 属性访问: obj.attr
+    if (expr.includes('.') && !expr.startsWith('"') && !expr.startsWith("'") && !expr.startsWith('f"') && !expr.startsWith("f'")) {
+      const dotIdx = expr.indexOf('.');
+      const objExpr = expr.slice(0, dotIdx);
+      const attr = expr.slice(dotIdx + 1);
+      const obj = evalExpr(objExpr.trim());
+      
+      // 类实例属性/方法
+      if (obj && typeof obj === 'object' && obj.__class__) {
+        // 检查是否是方法调用（带括号）
+        if (attr.includes('(') && attr.endsWith(')')) {
+          const methodName = attr.slice(0, attr.indexOf('('));
+          const argsStr = attr.slice(attr.indexOf('(') + 1, -1);
+          const args = argsStr ? splitTopLevel(argsStr, ',').map(a => evalExpr(a.trim())) : [];
+          const method = getAttr(obj, methodName);
+          if (method && method.__method__) {
+            return callMethodSync(obj, methodName, args);
+          }
+        }
+        return getAttr(obj, attr);
+      }
+      
+      // 字典方法
+      if (obj && typeof obj === 'object' && obj.__isDict__) {
+        if (attr.includes('(') && attr.endsWith(')')) {
+          const methodName = attr.slice(0, attr.indexOf('('));
+          const argsStr = attr.slice(attr.indexOf('(') + 1, -1);
+          const args = argsStr ? splitTopLevel(argsStr, ',').map(a => evalExpr(a.trim())) : [];
+          const keys = Object.keys(obj).filter(k => k !== '__isDict__');
+          switch (methodName) {
+            case 'get':
+              return args[0] !== undefined && obj[String(args[0])] !== undefined ? obj[String(args[0])] : (args[1] !== undefined ? args[1] : undefined);
+            case 'keys':
+              return keys;
+            case 'values':
+              return keys.map(k => obj[k]);
+            case 'items':
+              return keys.map(k => [k, obj[k]]);
+          }
+        }
+        if (obj[attr] !== undefined) return obj[attr];
+      }
+      
+      // 列表方法
+      if (Array.isArray(obj)) {
+        if (attr.includes('(') && attr.endsWith(')')) {
+          const methodName = attr.slice(0, attr.indexOf('('));
+          const argsStr = attr.slice(attr.indexOf('(') + 1, -1);
+          const args = argsStr ? splitTopLevel(argsStr, ',').map(a => evalExpr(a.trim())) : [];
+          switch (methodName) {
+            case 'append':
+              obj.push(args[0]);
+              return undefined;
+            case 'pop':
+              return args[0] !== undefined ? obj.splice(args[0], 1)[0] : obj.pop();
+            case 'index':
+              return obj.indexOf(args[0]);
+            case 'join':
+              return obj.join(args[0] !== undefined ? String(args[0]) : ',');
+          }
+        }
+      }
+      
+      // 字符串方法
+      if (typeof obj === 'string') {
+        if (attr.includes('(') && attr.endsWith(')')) {
+          const methodName = attr.slice(0, attr.indexOf('('));
+          const argsStr = attr.slice(attr.indexOf('(') + 1, -1);
+          const args = argsStr ? splitTopLevel(argsStr, ',').map(a => evalExpr(a.trim())) : [];
+          switch (methodName) {
+            case 'lower': return obj.toLowerCase();
+            case 'upper': return obj.toUpperCase();
+            case 'strip': return obj.trim();
+            case 'lstrip': return obj.trimStart();
+            case 'rstrip': return obj.trimEnd();
+            case 'startswith': return obj.startsWith(String(args[0]));
+            case 'endswith': return obj.endsWith(String(args[0]));
+            case 'replace': return obj.replaceAll(String(args[0]), String(args[1]));
+            case 'split': return obj.split(args[0] !== undefined ? String(args[0]) : ',');
+            case 'join': return args[0] && Array.isArray(args[0]) ? args[0].join(obj) : obj;
+          }
+        }
+      }
+      
+      // 模块/普通对象属性访问
+      if (obj && typeof obj === 'object') {
+        if (attr.includes('(') && attr.endsWith(')')) {
+          const methodName = attr.slice(0, attr.indexOf('('));
+          const argsStr = attr.slice(attr.indexOf('(') + 1, -1);
+          const args = argsStr ? splitTopLevel(argsStr, ',').map(a => evalExpr(a.trim())) : [];
+          if (typeof obj[methodName] === 'function') {
+            return obj[methodName](...args);
+          }
+        }
+        if (obj[attr] !== undefined) return obj[attr];
+      }
+    }
+
+    // self 关键字
+    if (expr === 'self') return selfObj;
+
+    // 下标访问: obj[key]
+    if (expr.endsWith(']') && expr.includes('[')) {
+      const bracketIdx = expr.lastIndexOf('[');
+      const objExpr = expr.slice(0, bracketIdx);
+      const keyExpr = expr.slice(bracketIdx + 1, -1);
+      const obj = evalExpr(objExpr.trim());
+      const key = evalExpr(keyExpr.trim());
+      if (Array.isArray(obj)) return obj[Number(key)];
+      if (obj && typeof obj === 'object' && obj.__isDict__) return obj[String(key)];
+      if (obj && typeof obj === 'object' && obj.__class__) return getAttr(obj, String(key));
+    }
+
+    // time.time() 支持
+    if (expr === 'time.time()') return Date.now() / 1000;
+
     if (expr in vars) return vars[expr];
 
     return expr;
   }
 
-  async function evalFString(expr) {
+  function evalFString(expr) {
     const q = expr[1];
     const content = expr.slice(2, expr.lastIndexOf(q));
-    let result = '';
-    let i = 0;
-    while (i < content.length) {
-      if (content[i] === '{' && content[i + 1] !== '{') {
-        let depth = 1;
-        let j = i + 1;
-        while (j < content.length && depth > 0) {
-          if (content[j] === '{') depth++;
-          if (content[j] === '}') depth--;
-          j++;
-        }
-        const inner = content.slice(i + 1, j - 1);
-        result += String(await evalExpr(inner.trim()));
-        i = j;
-      } else if (content[i] === '\\' && i + 1 < content.length) {
-        result += processEscapes(content.slice(i, i + 2));
-        i += 2;
-      } else {
-        result += content[i];
-        i++;
-      }
-    }
-    return result;
+    const result = content.replace(/\{([^}]+)\}/g, (_, inner) => {
+      return String(evalExpr(inner.trim()));
+    });
+    return unescapeStr(result);
   }
 
   function skipBlock(startIdx, baseIndent) {
@@ -616,7 +682,7 @@ async function execPythonPreview(code, outputEl) {
 
       if (trimmed.startsWith('return')) {
         const retExpr = trimmed.slice(6).trim();
-        if (retExpr) returnVal = await evalExpr(retExpr);
+        if (retExpr) returnVal = evalExpr(retExpr);
         hasReturn = true;
         control = 'return';
         break;
@@ -629,8 +695,7 @@ async function execPythonPreview(code, outputEl) {
         let mainArgs = argsStr.replace(/sep\s*=\s*(['"]).*?\1,?/g, '').replace(/end\s*=\s*(['"]).*?\1,?/g, '').trim();
         if (mainArgs.endsWith(',')) mainArgs = mainArgs.slice(0, -1);
         const parts = mainArgs ? splitTopLevel(mainArgs, ',') : [];
-        const vals = [];
-        for (const p of parts) vals.push(await evalExpr(p.trim()));
+        const vals = parts.map(a => evalExpr(a.trim()));
         const sep = sepMatch ? sepMatch[2] : ' ';
         const end = endMatch ? endMatch[2] : '\n';
         appendOutput(vals.join(sep) + end);
@@ -638,49 +703,22 @@ async function execPythonPreview(code, outputEl) {
         continue;
       }
 
-      if (trimmed.startsWith('class ') && trimmed.endsWith(':')) {
-        const clsMatch = trimmed.match(/^class\s+(\w+)\s*(\(.*\))?\s*:$/);
-        if (clsMatch) {
-          const className = clsMatch[1];
-          const bodyStart = i + 1;
-          const bodyIndent = indent + 1;
-          const bodyEnd = skipBlock(bodyStart, indent);
-          const methods = {};
-          const classVars = {};
+      if (trimmed.startsWith('input(') && trimmed.endsWith(')')) {
+        const arg = trimmed.slice(6, -1).trim();
+        const promptText = arg ? String(evalExpr(arg)) : '';
+        await getInput(promptText);
+        i++;
+        continue;
+      }
 
-          let ci = bodyStart;
-          while (ci < bodyEnd) {
-            const craw = lines[ci];
-            if (!craw || craw.trim() === '' || craw.trim().startsWith('#')) { ci++; continue; }
-            const cindent = getIndent(craw);
-            if (cindent <= indent) break;
-            const ctrim = craw.trim();
-
-            const defMatch = ctrim.match(/^def\s+(\w+)\s*\(([^)]*)\)\s*:$/);
-            if (defMatch && cindent === bodyIndent) {
-              const params = defMatch[2] ? defMatch[2].split(',').map(p => p.trim()).filter(p => p) : [];
-              const methodBodyStart = ci + 1;
-              const methodBodyIndent = cindent + 1;
-              const methodBodyEnd = skipBlock(methodBodyStart, cindent);
-              methods[defMatch[1]] = { params, bodyStart: methodBodyStart, bodyIndent: methodBodyIndent };
-              ci = methodBodyEnd;
-              continue;
-            }
-
-            const cvMatch = ctrim.match(/^(\w+)\s*=\s*(.+)$/);
-            if (cvMatch && cindent === bodyIndent) {
-              classVars[cvMatch[1]] = await evalExpr(cvMatch[2]);
-              ci++;
-              continue;
-            }
-
-            ci++;
-          }
-
-          classes[className] = { methods, classVars };
-          i = bodyEnd;
-          continue;
-        }
+      const inputAssignMatch = trimmed.match(/^(\w+)\s*=(?!=)\s*input\((.*)\)$/);
+      if (inputAssignMatch) {
+        const promptArg = inputAssignMatch[2].trim();
+        const promptText = promptArg ? String(evalExpr(promptArg)) : '';
+        const inputVal = await getInput(promptText);
+        vars[inputAssignMatch[1]] = inputVal;
+        i++;
+        continue;
       }
 
       if (trimmed.startsWith('def ') && trimmed.endsWith(':')) {
@@ -696,10 +734,59 @@ async function execPythonPreview(code, outputEl) {
         }
       }
 
+      // class 类定义
+      if (trimmed.startsWith('class ') && trimmed.endsWith(':')) {
+        const classMatch = trimmed.match(/^class\s+(\w+)\s*(\([^)]*\))?\s*:$/);
+        if (classMatch) {
+          const className = classMatch[1];
+          const classBodyStart = i + 1;
+          const classBodyIndent = indent + 1;
+          const classBodyEnd = skipBlock(classBodyStart, indent);
+          
+          // 解析类体：收集方法和类属性
+          const methods = {};
+          const classVars = {};
+          let ci = classBodyStart;
+          while (ci < classBodyEnd) {
+            const craw = lines[ci];
+            if (craw.trim() === '' || craw.trim().startsWith('#')) { ci++; continue; }
+            const cindent = getIndent(craw);
+            if (cindent <= indent) break;
+            const ctrimmed = craw.trim();
+            
+            // 类方法
+            if (ctrimmed.startsWith('def ') && ctrimmed.endsWith(':') && cindent === classBodyIndent) {
+              const m = ctrimmed.match(/^def\s+(\w+)\s*\(([^)]*)\)\s*:$/);
+              if (m) {
+                const params = m[2] ? m[2].split(',').map(p => p.trim()).filter(p => p) : [];
+                const methodBodyStart = ci + 1;
+                const methodBodyIndent = cindent + 1;
+                const methodBodyEnd = skipBlock(methodBodyStart, cindent);
+                methods[m[1]] = { params, bodyStart: methodBodyStart, bodyIndent: methodBodyIndent };
+                ci = methodBodyEnd;
+                continue;
+              }
+            }
+            
+            // 类属性赋值
+            const classVarMatch = ctrimmed.match(/^(\w+)\s*=(?!=)\s*(.+)$/);
+            if (classVarMatch && cindent === classBodyIndent) {
+              classVars[classVarMatch[1]] = evalExpr(classVarMatch[2]);
+            }
+            
+            ci++;
+          }
+          
+          classes[className] = { methods, classVars };
+          i = classBodyEnd;
+          continue;
+        }
+      }
+
       if (trimmed.startsWith('if ') && trimmed.endsWith(':')) {
         const cond = trimmed.slice(3, -1).trim();
         const isDunder = trimmed.match(/^if\s+__name__\s*==\s*["']__main__["']\s*:$/);
-        const condResult = isDunder ? true : await evalExpr(cond);
+        const condResult = isDunder ? true : evalExpr(cond);
         const blockEnd = skipBlock(i + 1, indent);
 
         if (condResult) {
@@ -717,11 +804,10 @@ async function execPythonPreview(code, outputEl) {
           if (lt.startsWith('elif ') && lt.endsWith(':')) {
             const econd = lt.slice(5, -1).trim();
             const eBlockEnd = skipBlock(i + 1, indent);
-            if (!condResult && await evalExpr(econd)) {
+            if (!condResult && evalExpr(econd)) {
               const result = await execFrom(i + 1, indent);
               if (result.control) { control = result.control; }
               i = eBlockEnd;
-              condResult = true;
               continue;
             }
             i = eBlockEnd;
@@ -745,10 +831,7 @@ async function execPythonPreview(code, outputEl) {
       if (trimmed.startsWith('for ') && trimmed.includes(' range(') && trimmed.endsWith(':')) {
         const m = trimmed.match(/^for\s+(\w+)\s+in\s+range\(([^)]+)\)\s*:$/);
         if (m) {
-          const rangeArgsStr = m[2];
-          const rangeParts = splitTopLevel(rangeArgsStr, ',');
-          const rangeArgs = [];
-          for (const a of rangeParts) rangeArgs.push(Number(await evalExpr(a.trim())));
+          const rangeArgs = m[2].split(',').map(a => Number(evalExpr(a.trim())));
           const start = rangeArgs.length > 1 ? rangeArgs[0] : 0;
           const end = rangeArgs.length > 1 ? rangeArgs[1] : rangeArgs[0];
           const step = rangeArgs.length > 2 ? rangeArgs[2] : 1;
@@ -769,20 +852,17 @@ async function execPythonPreview(code, outputEl) {
       if (trimmed.startsWith('for ') && trimmed.includes(' in ') && trimmed.endsWith(':')) {
         const m = trimmed.match(/^for\s+(.+?)\s+in\s+(.+)\s*:$/);
         if (m) {
-          const varNames = m[1].trim();
-          const iterExpr = m[2].trim();
-          const iterable = await evalExpr(iterExpr);
+          const varNames = m[1].split(',').map(v => v.trim());
+          const iterable = evalExpr(m[2].trim());
           const blockEnd = skipBlock(i + 1, indent);
-
-          const isTupleUnpack = varNames.includes(',');
-          const varList = isTupleUnpack ? varNames.split(',').map(s => s.trim()) : [varNames];
-
           if (Array.isArray(iterable)) {
             for (const item of iterable) {
-              if (isTupleUnpack && Array.isArray(item)) {
-                varList.forEach((name, idx) => { vars[name] = item[idx]; });
-              } else {
-                vars[varList[0]] = item;
+              if (varNames.length === 1) {
+                vars[varNames[0]] = item;
+              } else if (Array.isArray(item)) {
+                varNames.forEach((name, idx) => {
+                  vars[name] = item[idx];
+                });
               }
               const result = await execFrom(i + 1, indent);
               if (result.control === 'break') break;
@@ -801,7 +881,7 @@ async function execPythonPreview(code, outputEl) {
         let iterations = 0;
 
         while (true) {
-          if (trimmed !== 'while True:' && !await evalExpr(cond)) break;
+          if (trimmed !== 'while True:' && !evalExpr(cond)) break;
           const result = await execFrom(i + 1, indent);
           if (result.control === 'break') break;
           if (result.control === 'return') { control = 'return'; break; }
@@ -853,28 +933,29 @@ async function execPythonPreview(code, outputEl) {
         continue;
       }
 
-      const attrAugMatch = trimmed.match(/^(\w+)\.(\w+)\s*(\+=|-=|\*=|\/=)\s*(.+)$/);
-      if (attrAugMatch) {
-        const objName = attrAugMatch[1];
-        const attrName = attrAugMatch[2];
-        const op = attrAugMatch[3];
-        const r = await evalExpr(attrAugMatch[4]);
-        const obj = vars[objName];
-        if (isPyObj(obj)) {
-          const v = obj.__attrs__[attrName] || 0;
-          if (op === '+=') obj.__attrs__[attrName] = (typeof v === 'number' && typeof r === 'number') ? v + r : String(v) + String(r);
-          else if (op === '-=') obj.__attrs__[attrName] = v - r;
-          else if (op === '*=') obj.__attrs__[attrName] = v * r;
-          else if (op === '/=') obj.__attrs__[attrName] = v / r;
-        }
+      // self.attr = value 赋值
+      const selfAssignMatch = trimmed.match(/^self\.(\w+)\s*=(?!=)\s*(.+)$/);
+      if (selfAssignMatch && selfObj) {
+        setAttr(selfObj, selfAssignMatch[1], evalExpr(selfAssignMatch[2]));
         i++;
         continue;
+      }
+
+      // obj.attr = value 属性赋值
+      const objAttrAssignMatch = trimmed.match(/^(\w+(?:\.\w+)*)\.(\w+)\s*=(?!=)\s*(.+)$/);
+      if (objAttrAssignMatch && !trimmed.startsWith('self.')) {
+        const obj = evalExpr(objAttrAssignMatch[1]);
+        if (obj && typeof obj === 'object' && obj.__class__) {
+          setAttr(obj, objAttrAssignMatch[2], evalExpr(objAttrAssignMatch[3]));
+          i++;
+          continue;
+        }
       }
 
       const augMatch = trimmed.match(/^(\w+)\s*(\+=|-=|\*=|\/=)\s*(.+)$/);
       if (augMatch) {
         const v = vars[augMatch[1]] || 0;
-        const r = await evalExpr(augMatch[3]);
+        const r = evalExpr(augMatch[3]);
         if (augMatch[2] === '+=') vars[augMatch[1]] = (typeof v === 'number' && typeof r === 'number') ? v + r : String(v) + String(r);
         else if (augMatch[2] === '-=') vars[augMatch[1]] = v - r;
         else if (augMatch[2] === '*=') vars[augMatch[1]] = v * r;
@@ -883,95 +964,51 @@ async function execPythonPreview(code, outputEl) {
         continue;
       }
 
-      const attrAssignMatch = trimmed.match(/^(\w+)\.(\w+)\s*=\s*(.+)$/);
-      if (attrAssignMatch) {
-        const objName = attrAssignMatch[1];
-        const attrName = attrAssignMatch[2];
-        const value = await evalExpr(attrAssignMatch[3]);
-        const obj = vars[objName];
-        if (isPyObj(obj)) {
-          obj.__attrs__[attrName] = value;
-        } else if (obj && typeof obj === 'object') {
-          obj[attrName] = value;
-        }
-        i++;
-        continue;
-      }
-
-      const assignMatch = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
+      const assignMatch = trimmed.match(/^(\w+)\s*=(?!=)\s*(.+)$/);
       if (assignMatch) {
-        vars[assignMatch[1]] = await evalExpr(assignMatch[2]);
-        i++;
-        continue;
-      }
-
-      const dotAttrMethodMatch = trimmed.match(/^(\w+)\.(\w+)\.(\w+)\((.*)\)$/);
-      if (dotAttrMethodMatch) {
-        const baseName = dotAttrMethodMatch[1];
-        const attrName = dotAttrMethodMatch[2];
-        const methodName = dotAttrMethodMatch[3];
-        const argStr = dotAttrMethodMatch[4];
-        const argParts = argStr ? splitTopLevel(argStr, ',') : [];
-        const args = [];
-        for (const a of argParts) args.push(await evalExpr(a.trim()));
-        const baseObj = vars[baseName];
-
-        let attrVal;
-        if (isPyObj(baseObj)) {
-          if (attrName in baseObj.__attrs__) attrVal = baseObj.__attrs__[attrName];
-          else {
-            const cls = classes[baseObj.__class__];
-            if (cls && cls.classVars && attrName in cls.classVars) attrVal = cls.classVars[attrName];
-          }
-        } else if (baseObj && typeof baseObj === 'object') {
-          attrVal = baseObj[attrName];
+        const rhs = assignMatch[2].trim();
+        // 检查是否是类实例化: var = ClassName(args)
+        const newObjMatch = rhs.match(/^(\w+)\((.*)\)$/);
+        if (newObjMatch && classes[newObjMatch[1]]) {
+          const args = newObjMatch[2] ? splitTopLevel(newObjMatch[2], ',').map(a => evalExpr(a.trim())) : [];
+          vars[assignMatch[1]] = createInstance(newObjMatch[1], args);
+        } else {
+          vars[assignMatch[1]] = evalExpr(rhs);
         }
-
-        if (Array.isArray(attrVal)) {
-          if (methodName === 'append') { attrVal.push(args[0]); i++; continue; }
-          if (methodName === 'pop') { attrVal.pop(); i++; continue; }
-        }
-
-        i++;
-        continue;
-      }
-
-      const methodCallMatch = trimmed.match(/^(\w+)\.(\w+)\((.*)\)$/);
-      if (methodCallMatch) {
-        const objName = methodCallMatch[1];
-        const methodName = methodCallMatch[2];
-        const argStr = methodCallMatch[3];
-        const argParts = argStr ? splitTopLevel(argStr, ',') : [];
-        const args = [];
-        for (const a of argParts) args.push(await evalExpr(a.trim()));
-        const obj = vars[objName];
-
-        if (isPyObj(obj)) {
-          await callMethod(obj, methodName, args);
-          if (hasReturn) { control = 'return'; break; }
-          i++;
-          continue;
-        }
-
-        if (Array.isArray(obj)) {
-          if (methodName === 'append') { obj.push(args[0]); i++; continue; }
-          if (methodName === 'pop') { obj.pop(); i++; continue; }
-        }
-
         i++;
         continue;
       }
 
       const fnCallMatch = trimmed.match(/^(\w+)\((.*)\)$/);
       if (fnCallMatch && funcs[fnCallMatch[1]]) {
-        const argStr = fnCallMatch[2];
-        const argParts = argStr ? splitTopLevel(argStr, ',') : [];
-        const args = [];
-        for (const a of argParts) args.push(await evalExpr(a.trim()));
+        const args = fnCallMatch[2] ? splitTopLevel(fnCallMatch[2], ',').map(a => evalExpr(a.trim())) : [];
         await callFunc(fnCallMatch[1], args);
         if (hasReturn) { control = 'return'; break; }
         i++;
         continue;
+      }
+
+      // 异步方法调用语句: obj.method(args) 或 self.method(args)
+      const methodCallMatch = trimmed.match(/^(\w+(?:\.\w+)*)\((.*)\)$/);
+      if (methodCallMatch) {
+        const fullExpr = methodCallMatch[1];
+        const argsStr = methodCallMatch[2];
+        if (fullExpr.includes('.')) {
+          const dotIdx = fullExpr.lastIndexOf('.');
+          const objExpr = fullExpr.slice(0, dotIdx);
+          const methodName = fullExpr.slice(dotIdx + 1);
+          const obj = evalExpr(objExpr);
+          if (obj && typeof obj === 'object' && obj.__class__) {
+            const cls = classes[obj.__class__];
+            if (cls && cls.methods[methodName]) {
+              const args = argsStr ? splitTopLevel(argsStr, ',').map(a => evalExpr(a.trim())) : [];
+              await callMethodAsync(obj, methodName, args);
+              if (hasReturn) { control = 'return'; break; }
+              i++;
+              continue;
+            }
+          }
+        }
       }
 
       i++;
@@ -1123,7 +1160,7 @@ function initChatInput() {
 }
 
 const AI_CONFIG = {
-  apiUrl: 'https://api.sofia7.de5.net',
+  apiUrl: 'https://api.sofia-coder7.github.io',
   model: 'glm-4.7-flash',
   systemPrompt: '你是一个友好的 AI 助手，擅长回答编程、技术和日常问题。回答简洁明了，代码使用 Markdown 代码块格式。'
 };

@@ -73,7 +73,7 @@ html, body { height: 100%; overflow: hidden; }
 
 body {
   font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 16px;
+  font-size: 18.4px;
   line-height: 1.7;
   color: var(--t2);
   background: var(--bg);
@@ -212,6 +212,7 @@ textarea { font-family: inherit; }
 .sidebar-sublink {
   display: flex;
   align-items: center;
+  gap: 8px;
   padding: 10px 14px;
   font-size: 1.05rem;
   color: var(--t3);
@@ -232,8 +233,8 @@ textarea { font-family: inherit; }
   background: var(--bg-alt);
 }
 .sidebar-sublink.active {
-  color: var(--highlight);
-  font-weight: 600;
+  color: var(--t2);
+  font-weight: 500;
 }
 
 .sidebar-burger { display: none; }
@@ -1397,6 +1398,9 @@ textarea { font-family: inherit; }
   opacity: 0.04;
   user-select: none;
 }
+.about-deco-patch {
+  font-size: 0.45em;
+}
 .about-eyebrow {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.78rem;
@@ -1407,7 +1411,7 @@ textarea { font-family: inherit; }
   margin-bottom: 12px;
 }
 .about-title {
-  font-size: clamp(2.2rem, 6vw, 3.5rem);
+  font-size: clamp(3.17rem, 8.64vw, 5.04rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.1;
@@ -1647,8 +1651,10 @@ textarea { font-family: inherit; }
   margin-top: 2px;
   letter-spacing: 0.03em;
 }
-.changelog-tag-new { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-.changelog-tag-fix { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+.changelog-tag-new { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+.changelog-tag-optimize { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
+.changelog-tag-replace { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+.changelog-tag-fix { background: rgba(249, 115, 22, 0.12); color: #f97316; }
 .changelog-tag-del { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
 .changelog-footer {
   padding: 16px 24px;
@@ -1670,6 +1676,84 @@ textarea { font-family: inherit; }
   color: #0f172a;
 }
 .changelog-close-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* ---------- 更新日志完整页面 ---------- */
+.changelog-full-list {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-top: 48px;
+}
+
+.changelog-item {
+  background: var(--bg-card);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  padding: 28px 32px;
+  box-shadow: var(--sh-sm);
+  transition: all var(--t-fast);
+}
+
+.changelog-item:hover {
+  box-shadow: var(--sh-md);
+  transform: translateY(-2px);
+}
+
+.changelog-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.changelog-item-version {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--highlight);
+}
+
+.changelog-item-date {
+  font-size: 0.85rem;
+  color: var(--t4);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.changelog-item-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.changelog-item-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: var(--t2);
+  line-height: 1.7;
+}
+
+@media (max-width: 768px) {
+  .changelog-full-list {
+    gap: 20px;
+    margin-top: 32px;
+  }
+  .changelog-item {
+    padding: 20px;
+  }
+  .changelog-item-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .changelog-item-version {
+    font-size: 1.1rem;
+  }
+}
 
 /* ---------- Section 通用 ---------- */
 .sec-head {
@@ -2182,4 +2266,134 @@ textarea { font-family: inherit; }
 
 @media (max-width: 400px) {
   .project-list { grid-template-columns: 1fr; }
+}
+
+/* ---------- 设置页面 ---------- */
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  transition: all var(--t-fast);
+}
+.settings-item:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--sh-sm);
+}
+.settings-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.settings-item-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--t1);
+}
+.settings-item-desc {
+  font-size: 0.82rem;
+  color: var(--t3);
+  line-height: 1.5;
+}
+
+.settings-toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
+}
+.settings-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.settings-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--line-strong);
+  border-radius: 13px;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.settings-toggle-slider::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform var(--t-fast);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.settings-toggle input:checked + .settings-toggle-slider {
+  background: var(--highlight);
+}
+.settings-toggle input:checked + .settings-toggle-slider::before {
+  transform: translateX(22px);
+}
+
+.settings-btn {
+  padding: 8px 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--highlight);
+  border: 1px solid var(--highlight);
+  border-radius: var(--r-sm);
+  background: transparent;
+  transition: all var(--t-fast);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.settings-btn:hover {
+  background: var(--highlight);
+  color: #fff;
+}
+.settings-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.settings-btn-danger {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+.settings-btn-danger:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* ---------- 边缘高光效果 ---------- */
+.edge-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(
+    180px circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(59, 130, 246, 0.15),
+    transparent 70%
+  );
+  z-index: 0;
+}
+.edge-glow > * {
+  position: relative;
+  z-index: 1;
+}
+[data-theme="dark"] .edge-glow::before {
+  background: radial-gradient(
+    180px circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(96, 165, 250, 0.12),
+    transparent 70%
+  );
 }
