@@ -87,6 +87,18 @@ function switchPage(index) {
   if (sidebar && window.innerWidth <= 768) {
     sidebar.classList.remove('open');
   }
+
+  const aiFab = document.getElementById('aiFab');
+  if (aiFab) {
+    aiFab.classList.toggle('show', index === 2);
+  }
+
+  if (index !== 2) {
+    const aiChat = document.getElementById('aiChat');
+    if (aiChat) {
+      aiChat.classList.remove('open');
+    }
+  }
 }
 
 function initDropdowns() {
@@ -147,7 +159,7 @@ function initSidebar() {
   }
 }
 
-const CHANGELOG_VERSION = '2.13.1';
+const CHANGELOG_VERSION = '2.35.4';
 
 function initChangelog() {
   const overlay = document.getElementById('changelogOverlay');
