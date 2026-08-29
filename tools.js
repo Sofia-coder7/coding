@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initMarkdownEditor();
   initMarkdownActions();
   initMarkdownImportButton();
+  initHtmlPreview();
+  initCssPreview();
+  initJsPreview();
 });
 
 function initPythonDownloadButton() {
@@ -1168,3 +1171,313 @@ function initMarkdownImportButton() {
     fileInput.value = '';
   });
 }
+
+/* ================================================================
+   Python 引擎切换：系统自带（builtin） / Pyodide
+   Pyodide 懒加载，首次使用时下载
+   ================================================================ */
+
+let pyodideInstance = null;
+let pyodideLoading = false;
+
+async function loadPyodideRuntime(outputEl) {
+  if (pyodideInstance) return pyodideInstance;
+  if (pyodideLoading) {
+    return new Promise(resolve => {
+      const check = setInterval(() => {
+        if (pyodideInstance) {
+          clearInterval(check);
+          resolve(pyodideInstance);
+        }
+      }, 200);
+    });
+  }
+  pyodideLoading = true;
+  if (outputEl) {
+    const msg = document.createElement('span');
+    msg.className = 'py-info';
+    msg.textContent = '正在加载 Pyodide 运行环境（首次加载较慢，请稍候）...\n';
+    outputEl.appendChild(msg);
+  }
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js';
+    script.onload = async () => {
+      try {
+        pyodideInstance = await loadPyodide({
+          stdout: (text) => {
+            if (outputEl) {
+              const span = document.createElement('span');
+              span.textContent = text + '\n';
+              outputEl.appendChild(span);
+              outputEl.scrollTop = outputEl.scrollHeight;
+            }
+          },
+          stderr: (text) => {
+            if (outputEl) {
+              const span = document.createElement('span');
+              span.className = 'py-err';
+              span.textContent = text + '\n';
+              outputEl.appendChild(span);
+              outputEl.scrollTop = outputEl.scrollHeight;
+            }
+          }
+        });
+        pyodideLoading = false;
+        resolve(pyodideInstance);
+      } catch (e) {
+        pyodideLoading = false;
+        reject(e);
+      }
+    };
+    script.onerror = () => {
+      pyodideLoading = false;
+      reject(new Error('Pyodide 加载失败，请检查网络连接'));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+// 重写 runPython 以支持引擎切换
+const originalRunPython = runPython;
+
+runPython = async function() {
+  const engine = document.getElementById('pyEngine');
+  const engineType = engine ? engine.value : 'builtin';
+  const codeArea = document.getElementById('pyCode');
+  const output = document.getElementById('pyOutput');
+  const runBtn = document.getElementById('pyRun');
+
+  if (!codeArea || !output) return;
+
+  if (engineType === 'builtin') {
+    return originalRunPython();
+  }
+
+  const code = codeArea.value;
+  runBtn.disabled = true;
+  runBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg> 运行中...';
+
+  try {
+    output.innerHTML = '';
+    const pyodide = await loadPyodideRuntime(output);
+    output.innerHTML = '';
+    try {
+      await pyodide.runPythonAsync(code);
+    } catch (err) {
+      const errSpan = document.createElement('span');
+      errSpan.className = 'py-err';
+      errSpan.textContent = String(err.message || err);
+      output.appendChild(errSpan);
+    }
+    if (output.children.length === 0) {
+      output.innerHTML = '<span class="py-success">代码执行完成（无输出）</span>';
+    }
+  } catch (err) {
+    output.innerHTML = '';
+    const errSpan = document.createElement('span');
+    errSpan.className = 'py-err';
+    errSpan.textContent = String(err.message || err);
+    output.appendChild(errSpan);
+  } finally {
+    runBtn.disabled = false;
+    runBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> 运行';
+  }
+};
+
+// 保存引擎选择偏好
+document.addEventListener('DOMContentLoaded', () => {
+  const engineSel = document.getElementById('pyEngine');
+  if (engineSel) {
+    const saved = localStorage.getItem('py_engine');
+    if (saved) engineSel.value = saved;
+    engineSel.addEventListener('change', () => {
+      localStorage.setItem('py_engine', engineSel.value);
+    });
+  }
+});
+
+/* ================================================================
+   HTML / CSS / JavaScript 在线预览（iframe + srcdoc）
+   ================================================================ */
+
+function initHtmlPreview() {
+  const codeEl = document.getElementById('htmlCode');
+  const preview = document.getElementById('htmlPreview');
+  const refreshBtn = document.getElementById('htmlRefresh');
+  if (!codeEl || !preview) return;
+
+  function render() {
+    preview.srcdoc = codeEl.value;
+  }
+
+  let timer;
+  codeEl.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(render, 400);
+  });
+
+  if (refreshBtn) refreshBtn.addEventListener('click', render);
+  setTimeout(render, 200);
+
+  setupImportDownload('html', '.html', 'index.html');
+}
+
+function initCssPreview() {
+  const codeEl = document.getElementById('cssCode');
+  const preview = document.getElementById('cssPreview');
+  const refreshBtn = document.getElementById('cssRefresh');
+  if (!codeEl || !preview) return;
+
+  const demoHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <style id="__demo_css"></style>
+</head>
+<body>
+  <div class="demo-box">
+    <h2>CSS 预览演示</h2>
+    <p>在这里可以实时预览你的 CSS 效果。</p>
+    <button class="demo-btn">演示按钮</button>
+  </div>
+  <div class="demo-box" style="margin-top:16px;">
+    <h3>卡片 2</h3>
+    <p>第二个演示卡片。</p>
+  </div>
+</body>
+</html>`;
+
+  function render() {
+    const doc = demoHtml.replace('<style id="__demo_css"></style>', `<style id="__demo_css">${codeEl.value}</style>`);
+    preview.srcdoc = doc;
+  }
+
+  let timer;
+  codeEl.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(render, 300);
+  });
+
+  if (refreshBtn) refreshBtn.addEventListener('click', render);
+  setTimeout(render, 200);
+
+  setupImportDownload('css', '.css', 'style.css');
+}
+
+function initJsPreview() {
+  const codeEl = document.getElementById('jsCode');
+  const preview = document.getElementById('jsPreview');
+  const refreshBtn = document.getElementById('jsRefresh');
+  if (!codeEl || !preview) return;
+
+  function render() {
+    const doc = `<!DOCTYPE html>
+<html>
+<body>
+<script>
+try {
+${codeEl.value}
+} catch(e) {
+  document.body.innerHTML = '<pre style="color:red;padding:20px;">' + e.message + '</pre>';
+}
+<\/script>
+</body>
+</html>`;
+    preview.srcdoc = doc;
+  }
+
+  if (refreshBtn) refreshBtn.addEventListener('click', render);
+  setTimeout(render, 200);
+
+  setupImportDownload('js', '.js', 'main.js');
+}
+
+function setupImportDownload(prefix, ext, fileName) {
+  const downloadBtn = document.getElementById(prefix + 'Download');
+  const codeArea = document.getElementById(prefix + 'Code');
+  const importBtn = document.getElementById(prefix + 'Import');
+  const importFile = document.getElementById(prefix + 'ImportFile');
+
+  if (downloadBtn && codeArea) {
+    downloadBtn.addEventListener('click', () => {
+      const blob = new Blob([codeArea.value], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  if (importBtn && importFile && codeArea) {
+    importBtn.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        codeArea.value = ev.target.result;
+        codeArea.dispatchEvent(new Event('input'));
+      };
+      reader.readAsText(file);
+      importFile.value = '';
+    });
+  }
+}
+
+/* ================================================================
+   通用代码编辑器 Prism 高亮初始化
+   适用于 HTML / CSS / JavaScript / Markdown 编辑器
+   ================================================================ */
+
+function initCodeHighlight(textareaId, highlightId, tabSpaces) {
+  const codeArea = document.getElementById(textareaId);
+  const highlight = document.getElementById(highlightId);
+  if (!codeArea || !highlight) return;
+  const codeEl = highlight.querySelector('code');
+  if (!codeEl) return;
+
+  const tabStr = ' '.repeat(tabSpaces || 2);
+
+  function updateHighlight() {
+    codeEl.textContent = codeArea.value + '\n';
+    if (window.Prism) {
+      Prism.highlightElement(codeEl);
+    }
+  }
+
+  updateHighlight();
+
+  codeArea.addEventListener('input', updateHighlight);
+
+  codeArea.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = codeArea.selectionStart;
+      const end = codeArea.selectionEnd;
+      const value = codeArea.value;
+      codeArea.value = value.substring(0, start) + tabStr + value.substring(end);
+      codeArea.selectionStart = codeArea.selectionEnd = start + tabStr.length;
+      updateHighlight();
+    }
+  });
+
+  codeArea.addEventListener('scroll', () => {
+    highlight.scrollTop = codeArea.scrollTop;
+    highlight.scrollLeft = codeArea.scrollLeft;
+  });
+
+  // 返回更新函数，供外部（如导入文件）调用
+  return { update: updateHighlight };
+}
+
+// 各编辑器高亮实例（供导入等场景调用）
+window._highlighters = {};
+
+document.addEventListener('DOMContentLoaded', () => {
+  window._highlighters.html = initCodeHighlight('htmlCode', 'htmlHighlight', 2);
+  window._highlighters.css = initCodeHighlight('cssCode', 'cssHighlight', 2);
+  window._highlighters.javascript = initCodeHighlight('jsCode', 'jsHighlight', 2);
+  window._highlighters.markdown = initCodeHighlight('mdCode', 'mdHighlight', 2);
+});

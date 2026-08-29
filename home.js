@@ -5,10 +5,17 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidebar();
   initDropdowns();
   initToolSwitch();
+  initToolDirtyWatch();
+  initConfirmDialog();
   initChangelog();
   initAboutLinks();
+  initAboutStats();
   initRunTime();
   initSettings();
+  initLoadingBar();
+  initCookieConsent();
+  initContextMenu();
+  initShortcutBlock();
 });
 
 function initTheme() {
@@ -39,6 +46,12 @@ function initPageSwitch() {
       e.preventDefault();
       e.stopPropagation();
       const target = parseInt(el.dataset.page);
+      // sidebar-logo 点击：写入一次性免验证标记后刷新页面
+      if (el.classList.contains('sidebar-logo')) {
+        sessionStorage.setItem('invite_bypass', '1');
+        location.reload();
+        return;
+      }
       switchPage(target);
     });
   });
@@ -64,6 +77,11 @@ function switchPage(index) {
   });
   const target = document.querySelector(`.page[data-page="${index}"]`);
   if (target) target.classList.add('active');
+
+  // 切换到关于页时，触发站点统计数字动画（每次进入都从 0 开始）
+  if (index === 1 && typeof window.triggerAboutStatsAnimation === 'function') {
+    window.triggerAboutStatsAnimation();
+  }
 
   document.querySelectorAll('.sidebar-link').forEach(l => {
     l.classList.remove('active');
@@ -141,9 +159,132 @@ function initSidebar() {
   }
 }
 
-const CHANGELOG_VERSION = '2.41';
+const CHANGELOG_VERSION = '2.54';
 
 const CHANGELOG_DATA = [
+  {
+    version: '2.54',
+    date: '2026-08-29',
+    items: [
+      { type: '优化', tag: 'optimize', text: '右键菜单区分输入框内外：非输入框显示导航项，输入框内显示粘贴' },
+      { type: '修复', tag: 'fix', text: '修复右键粘贴失效（改用右键目标元素而非 activeElement）' },
+      { type: '修复', tag: 'fix', text: '修复右键剪切仅复制未删除的问题' },
+      { type: '优化', tag: 'optimize', text: '右键搜索改用 cn.bing.com，新增菜单弹出动画' },
+      { type: '新增', tag: 'new', text: '拦截 F12 键，需特殊码方可打开开发者工具' }
+    ]
+  },
+  {
+    version: '2.53',
+    date: '2026-08-29',
+    items: [
+      { type: '新增', tag: 'new', text: '自定义右键菜单，支持复制、粘贴、剪切、搜索' },
+      { type: '新增', tag: 'new', text: '拦截 Ctrl+U 与 Ctrl+Shift+I，需输入特殊码方可使用' }
+    ]
+  },
+  {
+    version: '2.52.2',
+    date: '2026-08-29',
+    items: [
+      { type: '优化', tag: 'optimize', text: '关于页 section 标题整体放大 0.75 倍' }
+    ]
+  },
+  {
+    version: '2.52.1',
+    date: '2026-08-29',
+    items: [
+      { type: '优化', tag: 'optimize', text: '重写关于页 section 标题样式，移除实心填充改为简约风格' }
+    ]
+  },
+  {
+    version: '2.52',
+    date: '2026-08-29',
+    items: [
+      { type: '优化', tag: 'optimize', text: '关于页站点统计每次进入都从 0 开始播放数字动画' },
+      { type: '优化', tag: 'optimize', text: '重写关于页面文本内容与布局，补全全部五项在线工具' }
+    ]
+  },
+  {
+    version: '2.51',
+    date: '2026-08-29',
+    items: [
+      { type: '修复', tag: 'fix', text: '修复 HTML/CSS/JavaScript 编辑器无法输入文字的问题' },
+      { type: '修复', tag: 'fix', text: '修复 HTML/CSS/JavaScript 编辑器无语法高亮显示的问题' },
+      { type: '修复', tag: 'fix', text: '修复 HTML/CSS/JavaScript 工具无法导入、下载、预览的问题' },
+      { type: '移除', tag: 'del', text: '去除边缘高光效果及对应设置项' },
+      { type: '新增', tag: 'new', text: '关于页 GitHub 链接指向项目仓库' },
+      { type: '新增', tag: 'new', text: '新增页面顶部加载进度条' },
+      { type: '新增', tag: 'new', text: '新增 Cookie 使用确认对话框' }
+    ]
+  },
+  {
+    version: '2.50.1',
+    date: '2026-08-29',
+    items: [
+      { type: '优化', tag: 'optimize', text: 'HTML / CSS / JavaScript / Markdown 编辑器增加 Prism 语法高亮彩色显示' },
+      { type: '优化', tag: 'optimize', text: '去除侧边栏工具图标的颜色，恢复统一风格' }
+    ]
+  },
+  {
+    version: '2.50',
+    date: '2026-08-29',
+    items: [
+      { type: '修复', tag: 'fix', text: '修复 v2.48 更新日志在历史记录中缺失的问题' },
+      { type: '优化', tag: 'optimize', text: '所有代码工具侧边栏图标增加颜色分类，一目了然' },
+      { type: '优化', tag: 'optimize', text: '站点统计动态数字改为点击「关于」时才从 0 开始播放' }
+    ]
+  },
+  {
+    version: '2.49',
+    date: '2026-08-29',
+    items: [
+      { type: '移除', tag: 'del', text: '移除 Lua / Ruby / PHP 在线运行工具' },
+      { type: '优化', tag: 'optimize', text: '去除工具编辑器输入框的默认边框' },
+      { type: '新增', tag: 'new', text: '工具切换/离开时弹出确认弹窗，防止代码丢失' }
+    ]
+  },
+  {
+    version: '2.48',
+    date: '2026-08-29',
+    items: [
+      { type: '新增', tag: 'new', text: '新增 HTML / CSS / JavaScript 在线预览工具，基于 iframe 实时渲染' },
+      { type: '新增', tag: 'new', text: '新增 Lua / Ruby / PHP 在线运行工具（懒加载 CDN，失败自动降级）' },
+      { type: '优化', tag: 'optimize', text: 'Python 运行支持切换引擎：系统自带（快速）/ Pyodide（完整）' },
+      { type: '优化', tag: 'optimize', text: '设置页「重置版本缓存」现在真正生效，清除缓存后自动刷新' },
+      { type: '新增', tag: 'new', text: '点击侧边栏 Logo 可刷新网页并免输入邀请码直接进入' }
+    ]
+  },
+  {
+    version: '2.47',
+    date: '2026-08-29',
+    items: [
+      { type: '修复', tag: 'fix', text: '计数器日期改为北京时间计算，杜绝访客时区导致的日期错误' },
+      { type: '移除', tag: 'del', text: '移除关于页面的 AI 相关内容' },
+      { type: '新增', tag: 'new', text: '关于页新增站点统计：站点浏览、今日浏览、昨日访客、本月访客' },
+      { type: '新增', tag: 'new', text: '新增昨日数据计数器，每日首次访问自动迁移前一日计数' }
+    ]
+  },
+  {
+    version: '2.46.1',
+    date: '2026-08-29',
+    items: [
+      { type: '优化', tag: 'optimize', text: '计数器拆分为总/月/日三个计数器，跨天自动重置日计数，跨月自动重置月计数' }
+    ]
+  },
+  {
+    version: '2.46',
+    date: '2026-08-29',
+    items: [
+      { type: '新增', tag: 'new', text: '接入 ruseo.cn PV 计数器，每次访问页面 +1（不受邀请码门控影响）' }
+    ]
+  },
+  {
+    version: '2.45',
+    date: '2026-08-29',
+    items: [
+      { type: '移除', tag: 'del', text: '完整移除博客系统，删除 blog.html、script.js、style.css、blog-icon.jpg' },
+      { type: '移除', tag: 'del', text: '移除侧边栏"博客"导航入口与关于页面的博客链接' }
+    ]
+  },
   {
     version: '2.41',
     date: '2026-08-28',
@@ -421,13 +562,64 @@ function renderFullChangelog() {
 
 function initAboutLinks() {
   const github = document.getElementById('aboutGithub');
-  if (github) github.addEventListener('click', () => window.open('https://github.com', '_blank'));
+  if (github) github.addEventListener('click', () => window.open('https://github.com/Sofia-coder7/coding', '_blank'));
 
   const bilibili = document.getElementById('aboutBilibili');
   if (bilibili) bilibili.addEventListener('click', () => window.open('https://space.bilibili.com/3493127635601963', '_blank'));
+}
 
-  const blog = document.getElementById('aboutBlog');
-  if (blog) blog.addEventListener('click', () => window.location.href = 'blog.html');
+function initAboutStats() {
+  const total = document.getElementById('statTotal');
+  if (!total) return;
+
+  const fmt = n => Number(n || 0).toLocaleString('en-US');
+  let statsCache = null;
+
+  function animateNumber(el, target, duration) {
+    if (!el) return;
+    if (target <= 0) { el.textContent = fmt(target); return; }
+    const start = 0;
+    const startTime = performance.now();
+    const ease = t => 1 - Math.pow(1 - t, 3);
+    function tick(now) {
+      const p = Math.min((now - startTime) / duration, 1);
+      const val = Math.round(start + (target - start) * ease(p));
+      el.textContent = fmt(val);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function playAnimation() {
+    if (!statsCache) return;
+    total.textContent = '0';
+    const today = document.getElementById('statToday');
+    const yesterday = document.getElementById('statYesterday');
+    const month = document.getElementById('statMonth');
+    if (today) today.textContent = '0';
+    if (yesterday) yesterday.textContent = '0';
+    if (month) month.textContent = '0';
+    animateNumber(total, statsCache.total, 1400);
+    if (today) animateNumber(today, statsCache.today, 1100);
+    if (yesterday) animateNumber(yesterday, statsCache.yesterday, 1100);
+    if (month) animateNumber(month, statsCache.month, 1200);
+  }
+
+  // 静默获取数据，不立即播放动画
+  Promise.resolve(window.PVStatsReady)
+    .then(stats => {
+      if (!stats) return;
+      statsCache = stats;
+      // 如果当前已经在关于页，立即播放
+      const activePage = document.querySelector('.page.active');
+      if (activePage && parseInt(activePage.dataset.page) === 1) {
+        playAnimation();
+      }
+    })
+    .catch(() => {});
+
+  // 暴露触发方法，切换到关于页时调用
+  window.triggerAboutStatsAnimation = playAnimation;
 }
 
 const SITE_START_DATE = new Date('2026-08-15');
@@ -459,44 +651,9 @@ function initRunTime() {
   setInterval(update, 60000);
 }
 
-/* ---------- 边缘高光效果 ---------- */
-let edgeGlowHandler = null;
-
-function enableEdgeGlow() {
-  if (edgeGlowHandler) return;
-  edgeGlowHandler = (e) => {
-    const els = document.querySelectorAll('.about-tech-card, .settings-item, .changelog-item, .try-panel, .about-tool-item');
-    els.forEach(el => {
-      const rect = el.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-      if (mx >= 0 && mx <= rect.width && my >= 0 && my <= rect.height) {
-        el.style.setProperty('--gx', mx + 'px');
-        el.style.setProperty('--gy', my + 'px');
-        el.classList.add('edge-glow');
-      } else {
-        el.classList.remove('edge-glow');
-      }
-    });
-  };
-  document.addEventListener('mousemove', edgeGlowHandler);
-}
-
-function disableEdgeGlow() {
-  if (!edgeGlowHandler) return;
-  document.removeEventListener('mousemove', edgeGlowHandler);
-  edgeGlowHandler = null;
-  document.querySelectorAll('.edge-glow').forEach(el => {
-    el.classList.remove('edge-glow');
-    el.style.removeProperty('--gx');
-    el.style.removeProperty('--gy');
-  });
-}
-
 /* ---------- 设置页面 ---------- */
 function initSettings() {
   const darkToggle = document.getElementById('settingDarkMode');
-  const glowToggle = document.getElementById('settingEdgeGlow');
 
   if (darkToggle) {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -505,21 +662,6 @@ function initSettings() {
       const next = darkToggle.checked ? 'dark' : 'light';
       document.documentElement.setAttribute('data-theme', next);
       localStorage.setItem('theme', next);
-    });
-  }
-
-  if (glowToggle) {
-    const glowSaved = localStorage.getItem('edge_glow') === 'on';
-    glowToggle.checked = glowSaved;
-    if (glowSaved) enableEdgeGlow();
-    glowToggle.addEventListener('change', () => {
-      if (glowToggle.checked) {
-        localStorage.setItem('edge_glow', 'on');
-        enableEdgeGlow();
-      } else {
-        localStorage.setItem('edge_glow', 'off');
-        disableEdgeGlow();
-      }
     });
   }
 
@@ -540,13 +682,32 @@ function initSettings() {
   const btnReset = document.getElementById('btnResetVersion');
   if (btnReset) {
     btnReset.addEventListener('click', () => {
+      // 真正清除所有版本/功能相关缓存：changelog 记忆、Service Worker、Cache Storage
       localStorage.removeItem('changelog_seen_version');
-      btnReset.textContent = '已重置';
+      sessionStorage.removeItem('invite_verified');
+      sessionStorage.removeItem('invite_bypass');
+
+      btnReset.textContent = '重置中...';
       btnReset.disabled = true;
-      setTimeout(() => {
-        btnReset.textContent = '重置版本缓存';
-        btnReset.disabled = false;
-      }, 1500);
+
+      const clearCaches = ('caches' in window)
+        ? caches.keys().then(names => Promise.all(names.map(name => caches.delete(name))))
+        : Promise.resolve();
+
+      const clearSW = ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations)
+        ? navigator.serviceWorker.getRegistrations().then(regs =>
+            Promise.all(regs.map(r => r.unregister().catch(() => {})))
+          ).catch(() => {})
+        : Promise.resolve();
+
+      Promise.all([clearCaches, clearSW]).then(() => {
+        btnReset.textContent = '已重置';
+        setTimeout(() => {
+          btnReset.textContent = '重置版本缓存';
+          btnReset.disabled = false;
+          location.reload();
+        }, 1200);
+      });
     });
   }
 
@@ -574,4 +735,447 @@ function initSettings() {
       }
     });
   }
+}
+
+/* ================================================================
+   工具脏状态跟踪 & 切换确认
+   ================================================================ */
+
+const toolDirtyState = {
+  currentTool: 'python',
+  defaults: {}
+};
+
+function isCurrentToolDirty() {
+  const tool = toolDirtyState.currentTool;
+  const id = getEditorIdForTool(tool);
+  if (!id) return false;
+  const el = document.getElementById(id);
+  if (!el) return false;
+  const def = toolDirtyState.defaults[tool];
+  if (def === undefined) return false;
+  return el.value !== def;
+}
+
+function getEditorIdForTool(tool) {
+  const map = {
+    python: 'pyCode',
+    markdown: 'mdCode',
+    html: 'htmlCode',
+    css: 'cssCode',
+    javascript: 'jsCode'
+  };
+  return map[tool] || null;
+}
+
+function initToolDirtyWatch() {
+  // 记录每个工具编辑器的初始值
+  const tools = ['python', 'markdown', 'html', 'css', 'javascript'];
+  tools.forEach(tool => {
+    const id = getEditorIdForTool(tool);
+    const el = document.getElementById(id);
+    if (el) toolDirtyState.defaults[tool] = el.value;
+  });
+
+  // 监听输入变化（可选：防抖触发某些效果）
+  tools.forEach(tool => {
+    const id = getEditorIdForTool(tool);
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', () => {
+        toolDirtyState.defaults[tool]; // no-op, just ensure tracking
+      });
+    }
+  });
+}
+
+/* ================================================================
+   确认弹窗（居中悬浮）
+   ================================================================ */
+
+let confirmCallback = null;
+
+function initConfirmDialog() {
+  const overlay = document.getElementById('confirmOverlay');
+  const cancelBtn = document.getElementById('confirmCancel');
+  const okBtn = document.getElementById('confirmOk');
+
+  if (!overlay) return;
+
+  function close() {
+    overlay.classList.remove('show');
+    confirmCallback = null;
+  }
+
+  cancelBtn.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('show')) close();
+  });
+
+  okBtn.addEventListener('click', () => {
+    if (confirmCallback) {
+      const cb = confirmCallback;
+      confirmCallback = null;
+      overlay.classList.remove('show');
+      cb();
+    } else {
+      overlay.classList.remove('show');
+    }
+  });
+}
+
+function showConfirm(title, body, onOk) {
+  const overlay = document.getElementById('confirmOverlay');
+  const titleEl = document.getElementById('confirmTitle');
+  const bodyEl = document.getElementById('confirmBody');
+  if (!overlay) { onOk && onOk(); return; }
+
+  if (titleEl) titleEl.textContent = title || '确认';
+  if (bodyEl) bodyEl.textContent = body || '确定要继续吗？';
+  confirmCallback = onOk || null;
+
+  overlay.classList.add('show');
+}
+
+// 重写 switchTool 加入脏检测确认
+const originalSwitchTool = switchTool;
+switchTool = function(toolKey) {
+  if (toolKey === toolDirtyState.currentTool) {
+    originalSwitchTool(toolKey);
+    return;
+  }
+
+  if (isCurrentToolDirty()) {
+    showConfirm('切换工具', '当前代码有修改，切换后会丢失未保存的内容，确定继续吗？', () => {
+      // 更新新工具的默认值快照
+      const id = getEditorIdForTool(toolKey);
+      const el = document.getElementById(id);
+      if (el) toolDirtyState.defaults[toolKey] = el.value;
+      toolDirtyState.currentTool = toolKey;
+      originalSwitchTool(toolKey);
+    });
+  } else {
+    const id = getEditorIdForTool(toolKey);
+    const el = document.getElementById(id);
+    if (el) toolDirtyState.defaults[toolKey] = el.value;
+    toolDirtyState.currentTool = toolKey;
+    originalSwitchTool(toolKey);
+  }
+};
+
+// 重写 switchPage — 离开工具页时检查
+const originalSwitchPage = switchPage;
+switchPage = function(index) {
+  // 如果当前在工具页（page 2）且要跳到其他页，检查脏状态
+  const activePage = document.querySelector('.page.active');
+  const currentPage = activePage ? parseInt(activePage.dataset.page) : 0;
+
+  if (currentPage === 2 && index !== 2 && isCurrentToolDirty()) {
+    showConfirm('离开工具页', '当前代码有修改，离开后会丢失未保存的内容，确定继续吗？', () => {
+      originalSwitchPage(index);
+    });
+    return;
+  }
+
+  originalSwitchPage(index);
+};
+
+/* ---------- 顶部加载进度条 ---------- */
+function initLoadingBar() {
+  const bar = document.getElementById('loadingBar');
+  if (!bar) return;
+  const progress = bar.querySelector('.loading-bar-progress');
+  if (!progress) return;
+
+  let width = 0;
+  const interval = setInterval(() => {
+    width += Math.random() * 18 + 6;
+    if (width >= 100) {
+      width = 100;
+      clearInterval(interval);
+      progress.style.width = '100%';
+      setTimeout(() => {
+        bar.classList.add('done');
+      }, 300);
+    }
+    progress.style.width = width + '%';
+  }, 120);
+}
+
+/* ---------- Cookie 使用确认 ---------- */
+function initCookieConsent() {
+  const banner = document.getElementById('cookieConsent');
+  if (!banner) return;
+
+  if (localStorage.getItem('cookie_accepted') === '1') {
+    banner.remove();
+    return;
+  }
+
+  const acceptBtn = document.getElementById('cookieAccept');
+  if (acceptBtn) {
+    acceptBtn.addEventListener('click', () => {
+      localStorage.setItem('cookie_accepted', '1');
+      banner.classList.add('hide');
+      setTimeout(() => banner.remove(), 400);
+    });
+  }
+
+  const declineBtn = document.getElementById('cookieDecline');
+  if (declineBtn) {
+    declineBtn.addEventListener('click', () => {
+      localStorage.setItem('cookie_accepted', '1');
+      banner.classList.add('hide');
+      setTimeout(() => banner.remove(), 400);
+    });
+  }
+}
+
+/* ---------- 自定义右键菜单 ---------- */
+function initContextMenu() {
+  const menu = document.getElementById('ctxMenu');
+  if (!menu) return;
+
+  const els = {
+    home: document.getElementById('ctxHome'),
+    changelog: document.getElementById('ctxChangelog'),
+    tools: document.getElementById('ctxTools'),
+    about: document.getElementById('ctxAbout'),
+    settings: document.getElementById('ctxSettings'),
+    sep: document.getElementById('ctxSep'),
+    copy: document.getElementById('ctxCopy'),
+    paste: document.getElementById('ctxPaste'),
+    cut: document.getElementById('ctxCut'),
+    search: document.getElementById('ctxSearch'),
+  };
+
+  let targetEl = null;
+
+  function hideMenu() {
+    menu.classList.remove('show');
+    menu.style.display = 'none';
+  }
+
+  function showItem(el) { if (el) el.style.display = ''; }
+  function hideItem(el) { if (el) el.style.display = 'none'; }
+
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+
+    const t = e.target;
+    const inInput = t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT');
+    targetEl = inInput ? t : null;
+
+    const sel = window.getSelection();
+    const hasPageSel = !inInput && sel && sel.toString().trim().length > 0;
+    let hasInputSel = false;
+    if (inInput && t.selectionStart !== undefined) {
+      hasInputSel = t.selectionStart !== t.selectionEnd;
+    }
+
+    // 先隐藏所有项
+    Object.values(els).forEach(hideItem);
+
+    if (inInput) {
+      // 输入框内：粘贴始终显示
+      showItem(els.paste);
+      if (hasInputSel) {
+        showItem(els.copy);
+        showItem(els.cut);
+        showItem(els.search);
+      }
+    } else {
+      // 非输入框：导航项始终显示
+      showItem(els.home);
+      showItem(els.changelog);
+      showItem(els.tools);
+      showItem(els.about);
+      showItem(els.settings);
+      if (hasPageSel) {
+        showItem(els.sep);
+        showItem(els.copy);
+        showItem(els.search);
+      }
+    }
+
+    // 定位
+    menu.style.display = 'block';
+    menu.classList.add('show');
+    const rect = menu.getBoundingClientRect();
+    let x = e.clientX, y = e.clientY;
+    if (x + rect.width > window.innerWidth - 4) x = window.innerWidth - rect.width - 4;
+    if (y + rect.height > window.innerHeight - 4) y = window.innerHeight - rect.height - 4;
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+  });
+
+  document.addEventListener('click', hideMenu);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideMenu();
+  });
+  document.addEventListener('scroll', hideMenu, true);
+
+  // 导航项点击
+  els.home.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideMenu();
+    sessionStorage.setItem('invite_bypass', '1');
+    location.reload();
+  });
+  els.changelog.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideMenu();
+    if (typeof switchPage === 'function') switchPage(3);
+  });
+  els.tools.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideMenu();
+    if (typeof switchPage === 'function') switchPage(2);
+  });
+  els.about.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideMenu();
+    if (typeof switchPage === 'function') switchPage(1);
+  });
+  els.settings.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideMenu();
+    if (typeof switchPage === 'function') switchPage(4);
+  });
+
+  els.copy.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (targetEl && targetEl.selectionStart !== targetEl.selectionEnd) {
+      const s = targetEl.selectionStart, en = targetEl.selectionEnd;
+      const text = targetEl.value.substring(s, en);
+      try { await navigator.clipboard.writeText(text); } catch { document.execCommand('copy'); }
+    } else {
+      const sel = window.getSelection();
+      if (sel && sel.toString()) {
+        try { await navigator.clipboard.writeText(sel.toString()); } catch { document.execCommand('copy'); }
+      }
+    }
+    hideMenu();
+  });
+
+  els.paste.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (targetEl && (targetEl.tagName === 'TEXTAREA' || targetEl.tagName === 'INPUT')) {
+      try {
+        const text = await navigator.clipboard.readText();
+        const s = targetEl.selectionStart, en = targetEl.selectionEnd;
+        targetEl.value = targetEl.value.substring(0, s) + text + targetEl.value.substring(en);
+        targetEl.selectionStart = targetEl.selectionEnd = s + text.length;
+        targetEl.dispatchEvent(new Event('input'));
+        targetEl.focus();
+      } catch {}
+    }
+    hideMenu();
+  });
+
+  els.cut.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (targetEl && targetEl.selectionStart !== targetEl.selectionEnd) {
+      const s = targetEl.selectionStart, en = targetEl.selectionEnd;
+      const text = targetEl.value.substring(s, en);
+      try { await navigator.clipboard.writeText(text); } catch {}
+      targetEl.value = targetEl.value.substring(0, s) + targetEl.value.substring(en);
+      targetEl.selectionStart = targetEl.selectionEnd = s;
+      targetEl.dispatchEvent(new Event('input'));
+      targetEl.focus();
+    } else {
+      const sel = window.getSelection();
+      if (sel && sel.toString()) {
+        try { await navigator.clipboard.writeText(sel.toString()); } catch {}
+        sel.deleteFromDocument();
+      }
+    }
+    hideMenu();
+  });
+
+  els.search.addEventListener('click', (e) => {
+    e.stopPropagation();
+    let query = '';
+    if (targetEl && targetEl.selectionStart !== targetEl.selectionEnd) {
+      query = targetEl.value.substring(targetEl.selectionStart, targetEl.selectionEnd);
+    } else {
+      const sel = window.getSelection();
+      if (sel) query = sel.toString().trim();
+    }
+    if (query) {
+      window.open('https://cn.bing.com/search?q=' + encodeURIComponent(query), '_blank');
+    }
+    hideMenu();
+  });
+}
+
+/* ---------- 快捷键拦截（Ctrl+U / Ctrl+Shift+I） ---------- */
+function initShortcutBlock() {
+  const overlay = document.getElementById('codeModalOverlay');
+  if (!overlay) return;
+
+  const input = document.getElementById('codeModalInput');
+  const errorEl = document.getElementById('codeModalError');
+  const confirmBtn = document.getElementById('codeModalConfirm');
+  const cancelBtn = document.getElementById('codeModalCancel');
+
+  const SPECIAL_CODE = '4mMhxpoxjZBmvp1t4uatwF44EDJkK5N8';
+  let pendingShortcut = null;
+  let bypass = false;
+
+  function showModal(type) {
+    pendingShortcut = type;
+    input.value = '';
+    errorEl.textContent = '';
+    overlay.classList.add('show');
+    setTimeout(() => input.focus(), 50);
+  }
+
+  function hideModal() {
+    overlay.classList.remove('show');
+    pendingShortcut = null;
+  }
+
+  function verify() {
+    if (input.value.trim() === SPECIAL_CODE) {
+      hideModal();
+      if (pendingShortcut === 'view-source') {
+        window.open('view-source:' + window.location.href, '_blank');
+      } else if (pendingShortcut === 'devtools') {
+        bypass = true;
+      }
+    } else {
+      errorEl.textContent = '特殊码不正确';
+      input.value = '';
+      input.focus();
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'u' || e.key === 'U' || e.keyCode === 85)) {
+      if (bypass) { bypass = false; return; }
+      e.preventDefault();
+      showModal('view-source');
+    }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) {
+      if (bypass) { bypass = false; return; }
+      e.preventDefault();
+      showModal('devtools');
+    }
+    if (e.key === 'F12' || e.keyCode === 123) {
+      if (bypass) { bypass = false; return; }
+      e.preventDefault();
+      showModal('devtools');
+    }
+  });
+
+  confirmBtn.addEventListener('click', verify);
+  cancelBtn.addEventListener('click', hideModal);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); verify(); }
+    if (e.key === 'Escape') { hideModal(); }
+  });
 }

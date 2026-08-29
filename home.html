@@ -13,8 +13,83 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script charset="UTF-8" id="LA_COLLECT" src="https://sdk.51.la/js-sdk-pro.min.js"></script>
     <script>LA.init({id:"3R1OGymGzZO5DVI3",ck:"3R1OGymGzZO5DVI3"})</script>
+    <!-- PV 计数器：总/月/日/昨日，每次访问 +1（不受邀请码门控影响），按北京时间跨天迁移昨日、重置日/月计数 -->
+    <script>
+    window.PVStatsReady = (async function() {
+      var API = 'https://js.ruseo.cn/api/counter.php';
+      var KEY = 'e91d240cb9d6f59608ce9db2fded6e79';
+      var C_TOTAL = '32213d0aaffbc0c523dce9c372ad9a63';
+      var C_MONTH = '7a5000d0757ff5e1d649df7433d082ba';
+      var C_DAY = '618c85d0ef884185d67e6caba50d1f65';
+      var C_YDAY = 'c9b394fa8ed7a2698d85b9096751db17';
+
+      function pad(n) { return String(n).padStart(2, '0'); }
+      // 北京时间（UTC+8）墙上时钟，与服务器返回的 last_count_time 时区一致，杜绝访客本地时区导致的日期错判
+      function bjDate(offsetDays) {
+        var d = new Date(Date.now() + (480 + new Date().getTimezoneOffset()) * 60000 + (offsetDays || 0) * 86400000);
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      }
+
+      function api(params) {
+        var qs = Object.keys(params).map(function(k) { return k + '=' + encodeURIComponent(params[k]); }).join('&');
+        return fetch(API + '?' + qs, { cache: 'no-store' }).then(function(r) { return r.json(); });
+      }
+
+      var today = bjDate(0);
+      var yesterday = bjDate(-1);
+      var thisMonth = today.slice(0, 7);
+
+      var dayInfo = await api({ action: 'get', api_key: KEY, counter_id: C_DAY });
+      var dayLast = (dayInfo.counter && dayInfo.counter.last_count_time) || '';
+      if (dayLast.slice(0, 10) !== today) {
+        // 新的一天：昨日有访问则迁移计数，否则昨日清零
+        await api({ action: 'reset', api_key: KEY, counter_id: C_YDAY });
+        if (dayLast.slice(0, 10) === yesterday) {
+          var oldCount = parseInt(dayInfo.counter && dayInfo.counter.current_count, 10) || 0;
+          if (oldCount > 0) await api({ action: 'increment', api_key: KEY, counter_id: C_YDAY, value: oldCount });
+        }
+        await api({ action: 'reset', api_key: KEY, counter_id: C_DAY });
+      }
+
+      var monInfo = await api({ action: 'get', api_key: KEY, counter_id: C_MONTH });
+      var monLast = (monInfo.counter && monInfo.counter.last_count_time) || '';
+      if (monLast.slice(0, 7) !== thisMonth) {
+        await api({ action: 'reset', api_key: KEY, counter_id: C_MONTH });
+      }
+
+      await Promise.all([
+        api({ action: 'increment', api_key: KEY, counter_id: C_TOTAL, value: 1 }),
+        api({ action: 'increment', api_key: KEY, counter_id: C_MONTH, value: 1 }),
+        api({ action: 'increment', api_key: KEY, counter_id: C_DAY, value: 1 })
+      ]);
+
+      // increment 返回的 value 只是增量回显而非最新计数，必须再 get 一次读取真实值，确保与计数器后台一致
+      var final = await Promise.all([
+        api({ action: 'get', api_key: KEY, counter_id: C_TOTAL }),
+        api({ action: 'get', api_key: KEY, counter_id: C_MONTH }),
+        api({ action: 'get', api_key: KEY, counter_id: C_DAY }),
+        api({ action: 'get', api_key: KEY, counter_id: C_YDAY })
+      ]);
+      function cnt(r) { return parseInt(r && r.counter && r.counter.current_count, 10) || 0; }
+
+      return {
+        total: cnt(final[0]),
+        month: cnt(final[1]),
+        today: cnt(final[2]),
+        yesterday: cnt(final[3])
+      };
+    })().catch(function(err) {
+      console.warn('PV counter error:', err);
+      return null;
+    });
+    </script>
 </head>
 <body>
+    <!-- 顶部加载进度条 -->
+    <div class="loading-bar" id="loadingBar">
+        <div class="loading-bar-progress"></div>
+    </div>
+
     <!-- 邀请码门控 -->
     <div id="invite-gate">
         <div class="gate-card">
@@ -69,6 +144,24 @@
                         </svg>
                         <span>Python</span>
                     </button>
+                    <button type="button" class="sidebar-sublink" data-tool="html">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+                        </svg>
+                        <span>HTML</span>
+                    </button>
+                    <button type="button" class="sidebar-sublink" data-tool="css">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                        </svg>
+                        <span>CSS</span>
+                    </button>
+                    <button type="button" class="sidebar-sublink" data-tool="javascript">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7v10c0 5.52 4.48 10 10 10s10-4.48 10-10V7L12 2z"/>
+                        </svg>
+                        <span>JavaScript</span>
+                    </button>
                     <button type="button" class="sidebar-sublink" data-tool="markdown">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 20h9"/>
@@ -78,15 +171,6 @@
                     </button>
                 </div>
             </div>
-
-            <a href="blog.html" class="sidebar-link sidebar-blog-link">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/>
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
-                    <path d="M9 7h7M9 11h5"/>
-                </svg>
-                <span>博客</span>
-            </a>
 
         </nav>
 
@@ -159,8 +243,12 @@
                     <!-- Python 面板 -->
                     <div class="try-panel active" id="panel-python">
                         <div class="try-toolbar">
-                            <span class="try-url">Python 在线运行（预览）</span>
+                            <span class="try-url">Python 在线运行</span>
                             <div class="py-actions">
+                                <select class="py-engine-select" id="pyEngine" title="选择运行引擎">
+                                    <option value="builtin">系统自带（快速）</option>
+                                    <option value="pyodide">Pyodide（完整）</option>
+                                </select>
                                 <input type="file" id="pyImportFile" accept=".py,.txt" style="display:none">
                                 <button class="md-btn" id="pyImport" title="导入 .py 文件">
                                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
@@ -217,7 +305,9 @@ for i in range(5):
                         <div class="md-wrap">
                             <div class="md-editor-area">
                                 <div class="md-editor-header">编辑</div>
-                                <textarea id="mdCode" spellcheck="false" placeholder="# 在此输入 Markdown"># Hello World
+                                <div class="code-editor-wrap">
+                                    <pre class="code-highlight" id="mdHighlight" aria-hidden="true"><code class="language-markdown"></code></pre>
+                                    <textarea id="mdCode" spellcheck="false" placeholder="# 在此输入 Markdown"># Hello World
 
 这是一个 **Markdown** 编辑器。
 
@@ -236,10 +326,191 @@ print("Hello!")
 |------|------|
 | 编辑 | ✅ |
 | 预览 | ✅ |</textarea>
+                                </div>
                             </div>
                             <div class="md-preview-area">
                                 <div class="md-preview-header">预览</div>
                                 <div class="md-preview" id="mdPreview"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HTML 预览面板 -->
+                    <div class="try-panel" id="panel-html">
+                        <div class="try-toolbar">
+                            <span class="try-url">HTML 在线预览</span>
+                            <div class="md-actions">
+                                <input type="file" id="htmlImportFile" accept=".html,.htm,.txt" style="display:none">
+                                <button class="md-btn" id="htmlImport" title="导入 .html 文件">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                                    导入
+                                </button>
+                                <button class="md-btn" id="htmlDownload" title="下载">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                                    下载
+                                </button>
+                                <button class="try-run" id="htmlRefresh">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                                    刷新预览
+                                </button>
+                            </div>
+                        </div>
+                        <div class="md-wrap">
+                            <div class="md-editor-area">
+                                <div class="md-editor-header">HTML 代码</div>
+                                <div class="code-editor-wrap">
+                                    <pre class="code-highlight" id="htmlHighlight" aria-hidden="true"><code class="language-markup"></code></pre>
+                                    <textarea id="htmlCode" spellcheck="false" placeholder="在此输入 HTML 代码"><!DOCTYPE html>
+<html>
+<head>
+  <title>预览</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    h1 { color: #3b82f6; }
+    .card { padding: 16px; border-radius: 8px; background: #f3f4f6; }
+  </style>
+</head>
+<body>
+  <h1>Hello, HTML!</h1>
+  <div class="card">
+    <p>这是一个 HTML 实时预览示例。</p>
+    <button onclick="alert('点击成功！')">点我</button>
+  </div>
+</body>
+</html></textarea>
+                                </div>
+                            </div>
+                            <div class="md-preview-area">
+                                <div class="md-preview-header">预览</div>
+                                <iframe id="htmlPreview" class="web-preview" sandbox="allow-scripts allow-forms allow-popups allow-modals"></iframe>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CSS 预览面板 -->
+                    <div class="try-panel" id="panel-css">
+                        <div class="try-toolbar">
+                            <span class="try-url">CSS 在线预览</span>
+                            <div class="md-actions">
+                                <input type="file" id="cssImportFile" accept=".css,.txt" style="display:none">
+                                <button class="md-btn" id="cssImport" title="导入 .css 文件">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                                    导入
+                                </button>
+                                <button class="md-btn" id="cssDownload" title="下载">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                                    下载
+                                </button>
+                                <button class="try-run" id="cssRefresh">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                                    刷新预览
+                                </button>
+                            </div>
+                        </div>
+                        <div class="md-wrap">
+                            <div class="md-editor-area">
+                                <div class="md-editor-header">CSS 代码</div>
+                                <div class="code-editor-wrap">
+                                    <pre class="code-highlight" id="cssHighlight" aria-hidden="true"><code class="language-css"></code></pre>
+                                    <textarea id="cssCode" spellcheck="false" placeholder="在此输入 CSS 代码">/* 在这里写你的 CSS */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 40px;
+  margin: 0;
+  min-height: 100vh;
+}
+
+.demo-box {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  padding: 24px;
+  border-radius: 12px;
+  max-width: 500px;
+}
+
+.demo-box h2 {
+  margin-top: 0;
+  font-size: 1.5rem;
+}
+
+.demo-btn {
+  background: white;
+  color: #667eea;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.demo-btn:hover {
+  transform: translateY(-2px);
+}</textarea>
+                                </div>
+                            </div>
+                            <div class="md-preview-area">
+                                <div class="md-preview-header">预览</div>
+                                <iframe id="cssPreview" class="web-preview" sandbox="allow-scripts allow-forms allow-popups allow-modals"></iframe>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- JavaScript 预览面板 -->
+                    <div class="try-panel" id="panel-javascript">
+                        <div class="try-toolbar">
+                            <span class="try-url">JavaScript 在线预览</span>
+                            <div class="md-actions">
+                                <input type="file" id="jsImportFile" accept=".js,.txt" style="display:none">
+                                <button class="md-btn" id="jsImport" title="导入 .js 文件">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                                    导入
+                                </button>
+                                <button class="md-btn" id="jsDownload" title="下载">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                                    下载
+                                </button>
+                                <button class="try-run" id="jsRefresh">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                                    刷新预览
+                                </button>
+                            </div>
+                        </div>
+                        <div class="md-wrap">
+                            <div class="md-editor-area">
+                                <div class="md-editor-header">JavaScript 代码</div>
+                                <div class="code-editor-wrap">
+                                    <pre class="code-highlight" id="jsHighlight" aria-hidden="true"><code class="language-javascript"></code></pre>
+                                    <textarea id="jsCode" spellcheck="false" placeholder="在此输入 JavaScript 代码">// 点击"刷新预览"在 iframe 中运行
+document.body.innerHTML = `
+  <div style="font-family:sans-serif;padding:30px;">
+    <h2 style="color:#0ea5e9;">JavaScript 预览</h2>
+    <p>当前时间：<span id="clock"></span></p>
+    <button id="btn" style="padding:8px 16px;background:#0ea5e9;color:white;border:none;border-radius:6px;cursor:pointer;">
+      点我计数
+    </button>
+    <p>点击次数：<span id="count">0</span></p>
+  </div>
+`;
+
+let count = 0;
+document.getElementById('btn').addEventListener('click', () => {
+  count++;
+  document.getElementById('count').textContent = count;
+});
+
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}
+updateClock();
+setInterval(updateClock, 1000);</textarea>
+                                </div>
+                            </div>
+                            <div class="md-preview-area">
+                                <div class="md-preview-header">预览</div>
+                                <iframe id="jsPreview" class="web-preview" sandbox="allow-scripts allow-forms allow-popups allow-modals"></iframe>
                             </div>
                         </div>
                     </div>
@@ -256,16 +527,38 @@ print("Hello!")
                         <div class="about-hero-left">
                             <p class="about-eyebrow">PERSONAL PORTFOLIO</p>
                             <h2 class="about-title">
-                                <span class="about-title-fill">关于本站</span>
-                                <span class="about-title-outline">寒枝可栖</span>
+                                <span class="about-title-fill">寒枝可栖</span>
+                                <span class="about-title-outline">About This Site</span>
                             </h2>
-                            <p class="about-desc">聚合 Python 运行、Markdown 编辑与网站部署——让开发与创作，变得简单高效。</p>
+                            <p class="about-desc">纯浏览器端在线工具站——在网页中写 Python、HTML、CSS、JavaScript 与 Markdown，无需安装任何环境，打开即用。</p>
                             <div class="about-btns">
-                                <button type="button" class="btn btn-dark" data-page="2">在线工具</button>
+                                <button type="button" class="btn btn-dark" data-page="2">开始使用</button>
                             </div>
                         </div>
                         <div class="about-hero-right">
                             <div class="about-deco" aria-hidden="true">&lt;/&gt;</div>
+                        </div>
+                    </div>
+
+                    <div class="about-stats">
+                        <div class="about-stats-hero">
+                            <span class="about-stats-label">站点浏览</span>
+                            <span class="about-stats-big" id="statTotal">--</span>
+                            <span class="about-stats-bar"></span>
+                        </div>
+                        <div class="about-stats-grid">
+                            <div class="about-stat-item">
+                                <span class="about-stat-label">今日浏览</span>
+                                <span class="about-stat-value" id="statToday">--</span>
+                            </div>
+                            <div class="about-stat-item">
+                                <span class="about-stat-label">昨日访客</span>
+                                <span class="about-stat-value" id="statYesterday">--</span>
+                            </div>
+                            <div class="about-stat-item">
+                                <span class="about-stat-label">本月浏览</span>
+                                <span class="about-stat-value" id="statMonth">--</span>
+                            </div>
                         </div>
                     </div>
 
@@ -277,17 +570,22 @@ print("Hello!")
                         <div class="about-tech-grid">
                             <div class="about-tech-card">
                                 <span class="about-tech-icon">🌐</span>
-                                <span class="about-tech-name">前端开发</span>
+                                <span class="about-tech-name">前端三件套</span>
                                 <span class="about-tech-detail">HTML · CSS · JavaScript</span>
                             </div>
                             <div class="about-tech-card">
                                 <span class="about-tech-icon">🐍</span>
                                 <span class="about-tech-name">Python</span>
-                                <span class="about-tech-detail">在线运行预览</span>
+                                <span class="about-tech-detail">内置引擎在线运行</span>
+                            </div>
+                            <div class="about-tech-card">
+                                <span class="about-tech-icon">📝</span>
+                                <span class="about-tech-name">Markdown</span>
+                                <span class="about-tech-detail">实时编辑与预览</span>
                             </div>
                             <div class="about-tech-card">
                                 <span class="about-tech-icon">🚀</span>
-                                <span class="about-tech-name">部署</span>
+                                <span class="about-tech-name">网站部署</span>
                                 <span class="about-tech-detail">GitHub Pages · Cloudflare</span>
                             </div>
                         </div>
@@ -303,7 +601,28 @@ print("Hello!")
                                 <span class="about-tool-icon">🐍</span>
                                 <div class="about-tool-info">
                                     <span class="about-tool-name">Python 在线运行</span>
-                                    <span class="about-tool-desc">内置语法解析，支持语法高亮与下载</span>
+                                    <span class="about-tool-desc">内置语法解析引擎，支持运行与下载</span>
+                                </div>
+                            </div>
+                            <div class="about-tool-item">
+                                <span class="about-tool-icon">📄</span>
+                                <div class="about-tool-info">
+                                    <span class="about-tool-name">HTML 在线预览</span>
+                                    <span class="about-tool-desc">实时渲染网页，支持导入与下载</span>
+                                </div>
+                            </div>
+                            <div class="about-tool-item">
+                                <span class="about-tool-icon">🎨</span>
+                                <div class="about-tool-info">
+                                    <span class="about-tool-name">CSS 在线预览</span>
+                                    <span class="about-tool-desc">即时查看样式效果，支持导入与下载</span>
+                                </div>
+                            </div>
+                            <div class="about-tool-item">
+                                <span class="about-tool-icon">⚡</span>
+                                <div class="about-tool-info">
+                                    <span class="about-tool-name">JavaScript 在线预览</span>
+                                    <span class="about-tool-desc">iframe 沙盒运行，实时查看效果</span>
                                 </div>
                             </div>
                             <div class="about-tool-item">
@@ -322,8 +641,8 @@ print("Hello!")
                             <h3 class="sec-title">关于我</h3>
                         </div>
                         <div class="about-bio">
-                            <p>寒枝可栖，一个热爱技术与创作的开发者。专注于前端开发与 Python 编程。</p>
-                            <p>本站所有工具均在浏览器端运行，无需后端服务，代码开源透明。</p>
+                            <p>寒枝可栖，独立开发者，专注于前端工程与 Python 编程。</p>
+                            <p>本站所有工具均在浏览器端运行，无需后端服务，代码开源透明。打开浏览器，即可开始编码——让开发与创作，变得简单高效。</p>
                         </div>
                         <div class="about-links">
                             <button type="button" class="about-link-btn" id="aboutGithub">
@@ -333,10 +652,6 @@ print("Hello!")
                             <button type="button" class="about-link-btn" id="aboutBilibili">
                                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.511.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.266-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .355-.124.657-.373.906L17.813 4.653zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.786 1.894v7.52c.017.764.28 1.395.786 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.129.786-1.893v-7.52c-.017-.764-.28-1.396-.786-1.894-.507-.497-1.134-.755-1.88-.773H5.333zM8 11.107c.373 0 .684.124.933.373.25.249.382.569.4.96v1.173c-.018.391-.15.711-.4.96-.249.249-.56.373-.933.373s-.684-.124-.933-.373c-.25-.249-.382-.569-.4-.96v-1.173c.018-.391.15-.711.4-.96.249-.249.56-.373.933-.373zm8 0c.373 0 .684.124.933.373.25.249.382.569.4.96v1.173c-.018.391-.15.711-.4.96-.249.249-.56.373-.933.373s-.684-.124-.933-.373c-.25-.249-.382-.569-.4-.96v-1.173c.018-.391.15-.711.4-.96.249-.249.56-.373.933-.373z"/></svg>
                                 bilibili
-                            </button>
-                            <button type="button" class="about-link-btn" id="aboutBlog">
-                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M9 7h7M9 11h5"/></svg>
-                                博客
                             </button>
                         </div>
                     </div>
@@ -408,16 +723,6 @@ print("Hello!")
                                     <span class="settings-toggle-slider"></span>
                                 </label>
                             </div>
-                            <div class="settings-item">
-                                <div class="settings-item-info">
-                                    <span class="settings-item-name">边缘高光处理</span>
-                                    <span class="settings-item-desc">元素边缘跟随鼠标移动的高光效果</span>
-                                </div>
-                                <label class="settings-toggle">
-                                    <input type="checkbox" id="settingEdgeGlow">
-                                    <span class="settings-toggle-slider"></span>
-                                </label>
-                            </div>
                         </div>
                     </div>
 
@@ -464,21 +769,25 @@ print("Hello!")
     <div class="page-footer" id="pageFooter">
         <p>© 寒枝可栖 2026 保留所有权利.</p>
         <p>第三方网站内容由其运营者负责，请自行判断，与本站无关.</p>
-        <p>本站已运行 <span id="runTime">0年 0月 0天</span> | v2.41</p>
+        <p>本站已运行 <span id="runTime">0年 0月 0天</span> | v2.54</p>
     </div>
 
     <!-- 第三方库 -->
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markdown.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- 更新日志悬浮窗 -->
     <div class="changelog-overlay" id="changelogOverlay">
         <div class="changelog-modal">
             <div class="changelog-header">
                 <div class="changelog-version">
-                    <span class="changelog-old-ver">v2.40</span>
+                    <span class="changelog-old-ver">v2.53</span>
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-                    <span class="changelog-new-ver">v2.41</span>
+                    <span class="changelog-new-ver">v2.54</span>
                 </div>
                 <button class="changelog-close-x" id="changelogCloseX" aria-label="关闭">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -486,14 +795,74 @@ print("Hello!")
             </div>
             <div class="changelog-body">
                 <ul class="changelog-list">
-                    <li><span class="changelog-tag changelog-tag-del">移除</span>去除 AI 对话功能，删除浮动按钮、对话浮窗及相关代码</li>
-                    <li><span class="changelog-tag changelog-tag-optimize">优化</span>导航栏去除"设置"项，仅保留底部设置图标</li>
-                    <li><span class="changelog-tag changelog-tag-replace">更换</span>更换博客图标为书本样式 SVG path</li>
-                    <li><span class="changelog-tag changelog-tag-new">新增</span>所有在线工具支持导入文件并解析（Python 导入 .py，Markdown 导入 .md）</li>
+                    <li><span class="changelog-tag changelog-tag-optimize">优化</span>右键菜单区分输入框内外，非输入框显示导航项</li>
+                    <li><span class="changelog-tag changelog-tag-fix">修复</span>修复右键粘贴失效与剪切仅复制未删除的问题</li>
+                    <li><span class="changelog-tag changelog-tag-optimize">优化</span>右键搜索改用 cn.bing.com，新增菜单弹出动画</li>
+                    <li><span class="changelog-tag changelog-tag-new">新增</span>拦截 F12 键，需特殊码方可打开开发者工具</li>
                 </ul>
             </div>
             <div class="changelog-footer">
                 <button class="changelog-close-btn" id="changelogCloseBtn">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认弹窗（工具切换/离开确认） -->
+    <div class="confirm-overlay" id="confirmOverlay">
+        <div class="confirm-modal">
+            <div class="confirm-title" id="confirmTitle">确认离开</div>
+            <div class="confirm-body" id="confirmBody">当前内容尚未保存，确定要离开吗？</div>
+            <div class="confirm-actions">
+                <button class="confirm-btn confirm-cancel" id="confirmCancel">取消</button>
+                <button class="confirm-btn confirm-ok" id="confirmOk">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cookie 使用确认 -->
+    <div class="cookie-consent" id="cookieConsent">
+        <div class="cookie-content">
+            <div class="cookie-text">
+                <span class="cookie-icon">🍪</span>
+                <p>本站使用 Cookie 改善浏览体验并统计访问数据，继续使用即表示同意。</p>
+            </div>
+            <div class="cookie-actions">
+                <button class="cookie-btn cookie-decline" id="cookieDecline">仅必要</button>
+                <button class="cookie-btn cookie-accept" id="cookieAccept">同意并继续</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自定义右键菜单 -->
+    <div class="ctx-menu" id="ctxMenu">
+        <div class="ctx-item" id="ctxHome">返回主页</div>
+        <div class="ctx-item" id="ctxChangelog">更新日志</div>
+        <div class="ctx-item" id="ctxTools">在线工具</div>
+        <div class="ctx-item" id="ctxAbout">关于</div>
+        <div class="ctx-item" id="ctxSettings">设置</div>
+        <div class="ctx-separator" id="ctxSep"></div>
+        <div class="ctx-item" id="ctxCopy">复制</div>
+        <div class="ctx-item" id="ctxPaste">粘贴</div>
+        <div class="ctx-item" id="ctxCut">剪切</div>
+        <div class="ctx-item" id="ctxSearch">搜索</div>
+    </div>
+
+    <!-- 特殊码验证窗 -->
+    <div class="code-modal-overlay" id="codeModalOverlay">
+        <div class="code-modal">
+            <div class="code-modal-icon">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0110 0v4"/>
+                </svg>
+            </div>
+            <p class="code-modal-title">请输入特殊码</p>
+            <p class="code-modal-desc">此操作已被保护，请验证后继续</p>
+            <input type="text" class="code-modal-input" id="codeModalInput" placeholder="输入特殊码..." autocomplete="off" spellcheck="false">
+            <p class="code-modal-error" id="codeModalError"></p>
+            <div class="code-modal-actions">
+                <button class="code-modal-btn code-modal-cancel" id="codeModalCancel">取消</button>
+                <button class="code-modal-btn code-modal-confirm" id="codeModalConfirm">确认</button>
             </div>
         </div>
     </div>
