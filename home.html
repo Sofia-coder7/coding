@@ -656,6 +656,18 @@ setInterval(updateClock, 1000);</textarea>
                         </div>
                     </div>
 
+                    <div class="about-section">
+                        <div class="sec-head">
+                            <span class="sec-num">04</span>
+                            <h3 class="sec-title">在线反馈</h3>
+                        </div>
+                        <p class="about-feedback-desc">如有建议或问题，欢迎填写反馈表单。</p>
+                        <button type="button" class="btn btn-dark" id="aboutFeedback">填写反馈</button>
+                        <div class="about-feedback-iframe" id="feedbackIframe" style="display:none;">
+                            <iframe src="https://ucnorm1g4otv.feishu.cn/share/base/form/shrcnxkdgLMr6FY2cItk0X1v6xp" frameborder="0" allowfullscreen="" class="iframe-form" style="width: 100%; height: 750px; display: block;"></iframe>
+                        </div>
+                    </div>
+
                     <div class="about-section about-footer-note">
                         <p>© 2026 寒枝可栖 · sofia-coder7.github.io · All tools run in browser</p>
                     </div>
@@ -769,7 +781,7 @@ setInterval(updateClock, 1000);</textarea>
     <div class="page-footer" id="pageFooter">
         <p>© 寒枝可栖 2026 保留所有权利.</p>
         <p>第三方网站内容由其运营者负责，请自行判断，与本站无关.</p>
-        <p>本站已运行 <span id="runTime">0年 0月 0天</span> | v2.54</p>
+        <p>本站已运行 <span id="runTime">0年 0月 0天</span> | v2.55</p>
     </div>
 
     <!-- 第三方库 -->
@@ -785,9 +797,9 @@ setInterval(updateClock, 1000);</textarea>
         <div class="changelog-modal">
             <div class="changelog-header">
                 <div class="changelog-version">
-                    <span class="changelog-old-ver">v2.53</span>
+                    <span class="changelog-old-ver">v2.54</span>
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-                    <span class="changelog-new-ver">v2.54</span>
+                    <span class="changelog-new-ver">v2.55</span>
                 </div>
                 <button class="changelog-close-x" id="changelogCloseX" aria-label="关闭">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -795,10 +807,8 @@ setInterval(updateClock, 1000);</textarea>
             </div>
             <div class="changelog-body">
                 <ul class="changelog-list">
-                    <li><span class="changelog-tag changelog-tag-optimize">优化</span>右键菜单区分输入框内外，非输入框显示导航项</li>
-                    <li><span class="changelog-tag changelog-tag-fix">修复</span>修复右键粘贴失效与剪切仅复制未删除的问题</li>
-                    <li><span class="changelog-tag changelog-tag-optimize">优化</span>右键搜索改用 cn.bing.com，新增菜单弹出动画</li>
-                    <li><span class="changelog-tag changelog-tag-new">新增</span>拦截 F12 键，需特殊码方可打开开发者工具</li>
+                    <li><span class="changelog-tag changelog-tag-new">新增</span>关于页新增「在线反馈」区块，点击展开飞书表单</li>
+                    <li><span class="changelog-tag changelog-tag-optimize">优化</span>导航栏按钮点击后显示加载条再切换页面，重复点击当前页无效</li>
                 </ul>
             </div>
             <div class="changelog-footer">

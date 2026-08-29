@@ -2342,7 +2342,7 @@ textarea { font-family: inherit; }
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 3.5px;
   z-index: 9999;
   background: transparent;
   pointer-events: none;
@@ -2361,6 +2361,19 @@ textarea { font-family: inherit; }
 }
 [data-theme="dark"] .loading-bar-progress {
   box-shadow: 0 0 8px rgba(96, 165, 250, 0.5);
+}
+
+/* ---------- 在线反馈 ---------- */
+.about-feedback-desc {
+  font-size: 0.9rem;
+  color: var(--t3);
+  margin-bottom: 16px;
+}
+.about-feedback-iframe {
+  margin-top: 20px;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid var(--line);
 }
 
 /* ---------- Cookie 使用确认 ---------- */

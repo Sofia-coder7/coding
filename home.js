@@ -159,9 +159,17 @@ function initSidebar() {
   }
 }
 
-const CHANGELOG_VERSION = '2.54';
+const CHANGELOG_VERSION = '2.55';
 
 const CHANGELOG_DATA = [
+  {
+    version: '2.55',
+    date: '2026-08-29',
+    items: [
+      { type: '新增', tag: 'new', text: '关于页新增「在线反馈」区块，点击展开飞书表单' },
+      { type: '优化', tag: 'optimize', text: '导航栏按钮点击后显示加载条再切换页面，重复点击当前页无效' }
+    ]
+  },
   {
     version: '2.54',
     date: '2026-08-29',
@@ -566,6 +574,17 @@ function initAboutLinks() {
 
   const bilibili = document.getElementById('aboutBilibili');
   if (bilibili) bilibili.addEventListener('click', () => window.open('https://space.bilibili.com/3493127635601963', '_blank'));
+
+  const feedback = document.getElementById('aboutFeedback');
+  if (feedback) {
+    feedback.addEventListener('click', () => {
+      const wrap = document.getElementById('feedbackIframe');
+      if (wrap) {
+        wrap.style.display = 'block';
+        feedback.style.display = 'none';
+      }
+    });
+  }
 }
 
 function initAboutStats() {
@@ -866,21 +885,45 @@ switchTool = function(toolKey) {
   }
 };
 
-// 重写 switchPage — 离开工具页时检查
+// 重写 switchPage — 同页无效 + 加载条 + 离开工具页检查
 const originalSwitchPage = switchPage;
+function runNavLoadingBar(onComplete) {
+  const bar = document.getElementById('loadingBar');
+  const progress = bar ? bar.querySelector('.loading-bar-progress') : null;
+  if (!progress) { onComplete(); return; }
+
+  bar.classList.remove('done');
+  progress.style.width = '0%';
+
+  let width = 0;
+  const interval = setInterval(() => {
+    width += Math.random() * 25 + 15;
+    if (width >= 100) {
+      width = 100;
+      clearInterval(interval);
+      progress.style.width = '100%';
+      setTimeout(() => {
+        bar.classList.add('done');
+        onComplete();
+      }, 200);
+    }
+    progress.style.width = width + '%';
+  }, 80);
+}
 switchPage = function(index) {
-  // 如果当前在工具页（page 2）且要跳到其他页，检查脏状态
   const activePage = document.querySelector('.page.active');
-  const currentPage = activePage ? parseInt(activePage.dataset.page) : 0;
+  const currentPage = activePage ? parseInt(activePage.dataset.page) : -1;
+
+  if (currentPage === index) return;
 
   if (currentPage === 2 && index !== 2 && isCurrentToolDirty()) {
     showConfirm('离开工具页', '当前代码有修改，离开后会丢失未保存的内容，确定继续吗？', () => {
-      originalSwitchPage(index);
+      runNavLoadingBar(() => originalSwitchPage(index));
     });
     return;
   }
 
-  originalSwitchPage(index);
+  runNavLoadingBar(() => originalSwitchPage(index));
 };
 
 /* ---------- 顶部加载进度条 ---------- */
