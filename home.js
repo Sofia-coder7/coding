@@ -216,7 +216,8 @@ function renderFullChangelog() {
 
 function initAboutLinks() {
   const github = document.getElementById('aboutGithub');
-  if (github) github.addEventListener('click', () => window.open('https://github.com/Sofia-coder7/coding', '_blank'));
+  if (github) github.addEventListener('click', () => window.open('https://github.com/devup5/toolkit', '_blank'));
+
 
   const bilibili = document.getElementById('aboutBilibili');
   if (bilibili) bilibili.addEventListener('click', () => window.open('https://space.bilibili.com/3493127635601963', '_blank'));

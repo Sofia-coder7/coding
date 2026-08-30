@@ -225,7 +225,7 @@ const CHANGELOG_DATA = [
     date: '2026-08-28',
     items: [
       { type: '优化', tag: 'optimize', text: '在线工具下拉菜单图标替换为 SVG path，风格统一' },
-      { type: '更换', tag: 'replace', text: '域名更换为 sofia-coder7.github.io' },
+      { type: '更换', tag: 'replace', text: '域名更换为 devup5.github.io' },
       { type: '新增', tag: 'new', text: '侧边栏新增"博客"入口，快捷跳转博客页面' },
       { type: '移除', tag: 'del', text: '暂时去除登录、注册系统' }
     ]
