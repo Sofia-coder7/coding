@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS 在线预览 — 寒枝可栖</title>
+    <meta name="author" content="寒枝可栖">
+    <link rel="icon" href="../home-icon.jpeg">
+    <link rel="stylesheet" href="../style/home.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="loadingBarMount"></div>
+    <div id="sidebarMount"></div>
+
+    <div class="pages">
+        <section class="page active">
+            <div class="try-wrap">
+                <div class="try-main">
+                    <div class="try-panel active" id="panel-css">
+                        <div class="try-toolbar">
+                            <span class="try-url">CSS 在线预览</span>
+                            <div class="md-actions">
+                                <input type="file" id="cssImportFile" accept=".css,.txt" style="display:none">
+                                <button class="md-btn" id="cssImport" title="导入 .css 文件">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                                    导入
+                                </button>
+                                <button class="md-btn" id="cssDownload" title="下载">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                                    下载
+                                </button>
+                                <button class="try-run" id="cssRefresh">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                                    刷新预览
+                                </button>
+                            </div>
+                        </div>
+                        <div class="md-wrap">
+                            <div class="md-editor-area">
+                                <div class="md-editor-header">CSS 代码</div>
+                                <div class="code-editor-wrap">
+                                    <pre class="code-highlight" id="cssHighlight" aria-hidden="true"><code class="language-css"></code></pre>
+                                    <textarea id="cssCode" spellcheck="false" placeholder="在此输入 CSS 代码">/* 在这里写你的 CSS */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 40px;
+  margin: 0;
+  min-height: 100vh;
+}
+
+.demo-box {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  padding: 24px;
+  border-radius: 12px;
+  max-width: 500px;
+}
+
+.demo-box h2 {
+  margin-top: 0;
+  font-size: 1.5rem;
+}
+
+.demo-btn {
+  background: white;
+  color: #667eea;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.demo-btn:hover {
+  transform: translateY(-2px);
+}</textarea>
+                                </div>
+                            </div>
+                            <div class="md-preview-area">
+                                <div class="md-preview-header">预览</div>
+                                <iframe id="cssPreview" class="web-preview" sandbox="allow-scripts allow-forms allow-popups allow-modals"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="footerMount"></div>
+    <div id="modalsMount"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+    <script src="../script/changelog.js"></script>
+    <script src="../script/common.js"></script>
+    <script src="tool.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof initCssPreview === 'function') initCssPreview();
+        });
+    </script>
+</body>
+</html>

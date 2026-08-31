@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown 编辑器 — 寒枝可栖</title>
+    <meta name="author" content="寒枝可栖">
+    <link rel="icon" href="../home-icon.jpeg">
+    <link rel="stylesheet" href="../style/home.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="loadingBarMount"></div>
+    <div id="sidebarMount"></div>
+
+    <div class="pages">
+        <section class="page active">
+            <div class="try-wrap">
+                <div class="try-main">
+                    <div class="try-panel active" id="panel-markdown">
+                        <div class="try-toolbar">
+                            <span class="try-url">Markdown 在线编辑</span>
+                            <div class="md-actions">
+                                <input type="file" id="mdImportFile" accept=".md,.txt" style="display:none">
+                                <button class="md-btn" id="mdImport" title="导入 .md 文件">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                                    导入
+                                </button>
+                                <button class="md-btn" id="mdCopy" title="复制">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                    复制
+                                </button>
+                                <button class="md-btn" id="mdDownload" title="下载">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                                    下载
+                                </button>
+                            </div>
+                        </div>
+                        <div class="md-wrap">
+                            <div class="md-editor-area">
+                                <div class="md-editor-header">编辑</div>
+                                <div class="code-editor-wrap">
+                                    <pre class="code-highlight" id="mdHighlight" aria-hidden="true"><code class="language-markdown"></code></pre>
+                                    <textarea id="mdCode" spellcheck="false" placeholder="# 在此输入 Markdown"># Hello World
+
+这是一个 **Markdown** 编辑器。
+
+## 功能列表
+- 实时预览
+- 代码高亮
+- 表格支持
+
+```python
+print("Hello!")
+```
+
+> 引用文本
+
+| 功能 | 状态 |
+|------|------|
+| 编辑 | ✅ |
+| 预览 | ✅ |</textarea>
+                                </div>
+                            </div>
+                            <div class="md-preview-area">
+                                <div class="md-preview-header">预览</div>
+                                <div class="md-preview" id="mdPreview"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="footerMount"></div>
+    <div id="modalsMount"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markdown.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="../script/changelog.js"></script>
+    <script src="../script/common.js"></script>
+    <script src="tool.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof initMarkdownEditor === 'function') initMarkdownEditor();
+            if (typeof initMarkdownActions === 'function') initMarkdownActions();
+            if (typeof initMarkdownImportButton === 'function') initMarkdownImportButton();
+        });
+    </script>
+</body>
+</html>

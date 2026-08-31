@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>更新日志 — 寒枝可栖</title>
+    <meta name="author" content="寒枝可栖">
+    <link rel="icon" href="home-icon.jpeg">
+    <link rel="stylesheet" href="style/home.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="loadingBarMount"></div>
+    <div id="sidebarMount"></div>
+
+    <div class="pages">
+        <section class="page active">
+            <div class="page-scroll">
+                <div class="container">
+                    <div class="about-hero">
+                        <div class="about-hero-left">
+                            <p class="about-eyebrow">CHANGELOG</p>
+                            <h2 class="about-title">
+                                <span class="about-title-fill">更新日志</span>
+                                <span class="about-title-outline">Version History</span>
+                            </h2>
+                            <p class="about-desc">记录本站每一次迭代与成长，见证从无到有的每一步。</p>
+                        </div>
+                        <div class="about-hero-right">
+                            <div class="about-deco" id="changelogDeco" aria-hidden="true">v3.10.1</div>
+                        </div>
+                    </div>
+
+                    <div class="changelog-full-list" id="changelogFullList">
+                        <!-- 由 JS 动态渲染 -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="footerMount"></div>
+    <div id="modalsMount"></div>
+
+    <script src="script/changelog.js"></script>
+    <script src="script/common.js"></script>
+</body>
+</html>

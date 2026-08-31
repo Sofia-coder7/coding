@@ -1,15 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
-  initPythonHighlight();
-  initPythonRunButton();
-  initPythonDownloadButton();
-  initPythonImportButton();
-  initMarkdownEditor();
-  initMarkdownActions();
-  initMarkdownImportButton();
-  initHtmlPreview();
-  initCssPreview();
-  initJsPreview();
-});
+/* 各工具页面按需调用对应的 init 函数 */
 
 function initPythonDownloadButton() {
   const downloadBtn = document.getElementById('pyDownload');

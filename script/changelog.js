@@ -2,9 +2,28 @@
    更新日志数据 — 独立存储，便于维护
    ================================================================ */
 
-const CHANGELOG_VERSION = '2.56';
+const CHANGELOG_VERSION = '3.10.1';
 
 const CHANGELOG_DATA = [
+  {
+    version: '3.10.1',
+    date: '2026-08-31',
+    items: [
+      { type: '修复', tag: 'fix', text: '修复「在线工具」下拉菜单默认不展开的问题' },
+      { type: '修复', tag: 'fix', text: '修复页面跳转时初始卡顿，加载条改为 CSS 过渡' }
+    ]
+  },
+  {
+    version: '3.10',
+    date: '2026-08-31',
+    items: [
+      { type: '新增', tag: 'new', text: '拆分多页面：新建 python / html / css / javascript / markdown 独立工具页面' },
+      { type: '新增', tag: 'new', text: '新建 about.html 关于页与 changelog.html 更新日志页' },
+      { type: '优化', tag: 'optimize', text: '设置改为弹窗模式，任意页面均可打开' },
+      { type: '优化', tag: 'optimize', text: '全局简约美化：页面过渡动画、滚动条、选中文本样式' },
+      { type: '优化', tag: 'optimize', text: '所有页面共享 common.js 统一布局，导航改为 JS 监听 button 跳转' }
+    ]
+  },
   {
     version: '2.56',
     date: '2026-08-30',
