@@ -1512,15 +1512,33 @@ function initTypeScript() {
     }
   }
 
-  runBtn.addEventListener('click', () => {
+  let tsLoader = null;
+  function loadTsCompiler() {
+    if (window.ts) return Promise.resolve();
+    if (tsLoader) return tsLoader;
+    tsLoader = new Promise((resolve, reject) => {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/typescript@5.3.3/lib/typescript.js';
+      s.onload = function() { resolve(); };
+      s.onerror = function() { tsLoader = null; reject(new Error('TypeScript 编译器加载失败，请检查网络连接')); };
+      document.head.appendChild(s);
+    });
+    return tsLoader;
+  }
+
+  runBtn.addEventListener('click', async () => {
     const code = codeArea.value;
     runBtn.disabled = true;
-    runBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg> 运行中...';
-
     output.innerHTML = '';
 
     try {
-      if (!window.ts) throw new Error('TypeScript 编译器未加载，请检查网络连接');
+      if (!window.ts) {
+        runBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg> 加载编译器...';
+        await loadTsCompiler();
+      }
+      runBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg> 运行中...';
+
+      if (!window.ts) throw new Error('TypeScript 编译器加载失败');
 
       const result = ts.transpileModule(code, {
         compilerOptions: { target: ts.ScriptTarget.ES2017, module: ts.ModuleKind.None }

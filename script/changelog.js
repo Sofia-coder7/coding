@@ -2,9 +2,17 @@
    更新日志数据 — 独立存储，便于维护
    ================================================================ */
 
-const CHANGELOG_VERSION = '3.11';
+const CHANGELOG_VERSION = '3.11.1';
 
 const CHANGELOG_DATA = [
+  {
+    version: '3.11.1',
+    date: '2026-09-02',
+    items: [
+      { type: '修复', tag: 'fix', text: '所有页面脚本添加 defer 属性，HTML 解析不再被脚本阻塞，首次打开秒开' },
+      { type: '优化', tag: 'optimize', text: 'TypeScript 编译器改为点击运行时懒加载，页面打开不再等待 8MB 编译器下载' }
+    ]
+  },
   {
     version: '3.11',
     date: '2026-09-02',
