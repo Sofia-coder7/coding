@@ -1470,3 +1470,795 @@ document.addEventListener('DOMContentLoaded', () => {
   window._highlighters.javascript = initCodeHighlight('jsCode', 'jsHighlight', 2);
   window._highlighters.markdown = initCodeHighlight('mdCode', 'mdHighlight', 2);
 });
+
+/* ================================================================
+   TypeScript 在线运行
+   使用 TypeScript 编译器将 TS 转译为 JS，通过 new Function 执行
+   ================================================================ */
+
+function initTypeScript() {
+  const runBtn = document.getElementById('tsRun');
+  const codeArea = document.getElementById('tsCode');
+  const output = document.getElementById('tsOutput');
+  const highlight = document.getElementById('tsHighlight');
+  const downloadBtn = document.getElementById('tsDownload');
+  const importBtn = document.getElementById('tsImport');
+  const importFile = document.getElementById('tsImportFile');
+
+  if (!runBtn || !codeArea || !output) return;
+
+  if (highlight) {
+    const codeEl = highlight.querySelector('code');
+    if (codeEl) {
+      function updateHighlight() {
+        codeEl.textContent = codeArea.value + '\n';
+        if (window.Prism) Prism.highlightElement(codeEl);
+      }
+      updateHighlight();
+      codeArea.addEventListener('input', updateHighlight);
+      codeArea.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const s = codeArea.selectionStart, en = codeArea.selectionEnd;
+          codeArea.value = codeArea.value.substring(0, s) + '  ' + codeArea.value.substring(en);
+          codeArea.selectionStart = codeArea.selectionEnd = s + 2;
+          updateHighlight();
+        }
+      });
+      codeArea.addEventListener('scroll', () => {
+        highlight.scrollTop = codeArea.scrollTop;
+        highlight.scrollLeft = codeArea.scrollLeft;
+      });
+    }
+  }
+
+  runBtn.addEventListener('click', () => {
+    const code = codeArea.value;
+    runBtn.disabled = true;
+    runBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg> 运行中...';
+
+    output.innerHTML = '';
+
+    try {
+      if (!window.ts) throw new Error('TypeScript 编译器未加载，请检查网络连接');
+
+      const result = ts.transpileModule(code, {
+        compilerOptions: { target: ts.ScriptTarget.ES2017, module: ts.ModuleKind.None }
+      });
+
+      const jsCode = result.outputText;
+      const out = [];
+      const fakeConsole = {
+        log: (...args) => out.push(args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' ')),
+        error: (...args) => out.push(args.map(a => String(a)).join(' ')),
+        warn: (...args) => out.push(args.map(a => String(a)).join(' ')),
+        info: (...args) => out.push(args.map(a => String(a)).join(' '))
+      };
+
+      try {
+        new Function('console', jsCode)(fakeConsole);
+      } catch(e) {
+        out.push('Error: ' + e.message);
+      }
+
+      if (out.length === 0) {
+        output.innerHTML = '<span class="py-success">代码执行完成（无输出）</span>';
+      } else {
+        const span = document.createElement('span');
+        span.textContent = out.join('\n');
+        output.appendChild(span);
+      }
+    } catch (err) {
+      const errSpan = document.createElement('span');
+      errSpan.className = 'py-err';
+      errSpan.textContent = String(err.message || err);
+      output.appendChild(errSpan);
+    } finally {
+      runBtn.disabled = false;
+      runBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> 运行';
+    }
+  });
+
+  if (downloadBtn && codeArea) {
+    downloadBtn.addEventListener('click', () => {
+      const blob = new Blob([codeArea.value], { type: 'text/x-typescript' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'main.ts'; a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  if (importBtn && importFile && codeArea) {
+    importBtn.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        codeArea.value = ev.target.result;
+        codeArea.dispatchEvent(new Event('input'));
+      };
+      reader.readAsText(file);
+      importFile.value = '';
+    });
+  }
+}
+
+/* ================================================================
+   PHP 在线运行
+   内置 PHP→JS 转译器，通过 new Function 执行
+   ================================================================ */
+
+function initPhpRun() {
+  const runBtn = document.getElementById('phpRun');
+  if (runBtn) runBtn.addEventListener('click', runPhp);
+}
+
+async function runPhp() {
+  const codeArea = document.getElementById('phpCode');
+  const output = document.getElementById('phpOutput');
+  const runBtn = document.getElementById('phpRun');
+
+  if (!codeArea || !output) return;
+  const code = codeArea.value;
+
+  runBtn.disabled = true;
+  runBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg> 运行中...';
+
+  output.innerHTML = '';
+
+  try {
+    const out = [];
+    const echo = (...args) => { out.push(args.join('')); };
+    const print = (...args) => { out.push(args.join('')); };
+
+    const PHP_VERSION = '8.2.0';
+    const count = (a) => Array.isArray(a) ? a.length : (a && typeof a === 'object' ? Object.keys(a).length : 0);
+    const array_sum = (a) => Array.isArray(a) ? a.reduce((s, v) => s + Number(v || 0), 0) : 0;
+    const array_column = (a, c) => Array.isArray(a) ? a.map(i => i ? i[c] : null) : [];
+    const array_keys = (a) => Array.isArray(a) ? a.map((_, i) => i) : Object.keys(a);
+    const array_values = (a) => Array.isArray(a) ? a : Object.values(a);
+    const array_merge = (...arrs) => arrs.flat();
+    const array_reverse = (a) => [...a].reverse();
+    const array_slice = (a, off, len) => a.slice(off, len !== undefined ? off + len : undefined);
+    const array_splice = (a, off, len, ...items) => { a.splice(off, len, ...items); return a; };
+    const array_push = (a, ...items) => { a.push(...items); return a.length; };
+    const array_pop = (a) => a.pop();
+    const array_shift = (a) => a.shift();
+    const array_unshift = (a, ...items) => { a.unshift(...items); return a.length; };
+    const array_map = (fn, a) => a.map(fn);
+    const array_filter = (a, fn) => fn ? a.filter(fn) : a.filter(v => v);
+    const array_reduce = (a, fn, init) => a.reduce(fn, init);
+    const array_combine = (k, v) => { const o = {}; k.forEach((kk, i) => o[kk] = v[i]); return o; };
+    const in_array = (n, a) => a.includes(n);
+    const implode = (sep, a) => Array.isArray(a) ? a.join(sep) : String(a);
+    const explode = (sep, s) => String(s).split(sep);
+    const strlen = (s) => String(s).length;
+    const strtoupper = (s) => String(s).toUpperCase();
+    const strtolower = (s) => String(s).toLowerCase();
+    const str_replace = (s, r, subj) => String(subj).split(s).join(r);
+    const str_repeat = (s, n) => String(s).repeat(n);
+    const substr = (s, start, len) => len !== undefined ? String(s).substr(start, len) : String(s).substr(start);
+    const trim = (s) => String(s).trim();
+    const ltrim = (s) => String(s).trimStart();
+    const rtrim = (s) => String(s).trimEnd();
+    const str_pad = (s, len, pad, side) => { pad = pad || ' '; side = side || 'right'; const d = len - s.length; if (d <= 0) return s; const p = pad.repeat(Math.ceil(d / pad.length)).slice(0, d); return side === 'left' ? p + s : s + p; };
+    const sprintf_impl = (fmt, ...args) => { let i = 0; return fmt.replace(/%[sdif]/g, () => String(args[i++])); };
+    const number_format = (n, dec) => Number(n).toFixed(dec || 0);
+    const range = (start, end, step) => { step = step || 1; const r = []; for (let v = start; step > 0 ? v <= end : v >= end; v += step) r.push(v); return r; };
+    const is_array = (v) => Array.isArray(v);
+    const is_string = (v) => typeof v === 'string';
+    const is_numeric = (v) => typeof v === 'number' || /^-?\d+(\.\d+)?$/.test(String(v));
+    const is_null = (v) => v === null;
+    const isset = (v) => v !== undefined && v !== null;
+    const empty = (v) => !v || (Array.isArray(v) && v.length === 0) || v === '';
+    const gettype = (v) => { if (Array.isArray(v)) return 'array'; if (v === null) return 'NULL'; return typeof v; };
+    const get_class = (v) => v && v.__class__ ? v.__class__ : false;
+    const var_dump = (v) => { out.push(typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v)); };
+    const print_r = (v) => { out.push(typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v)); };
+    const json_encode = (v) => JSON.stringify(v);
+    const json_decode = (s) => JSON.parse(s);
+    const intval = (v) => parseInt(v);
+    const floatval = (v) => parseFloat(v);
+    const strval = (v) => String(v);
+    const abs = (v) => Math.abs(v);
+    const max_fn = (...a) => Math.max(...a.flat());
+    const min_fn = (...a) => Math.min(...a.flat());
+    const round_fn = (n, d) => { d = d || 0; const f = Math.pow(10, d); return Math.round(n * f) / f; };
+    const floor_fn = (n) => Math.floor(n);
+    const ceil_fn = (n) => Math.ceil(n);
+    const sqrt_fn = (n) => Math.sqrt(n);
+    const pow_fn = (b, e) => Math.pow(b, e);
+    const date_fn = (fmt) => { const d = new Date(); return fmt.replace(/Y/g, d.getFullYear()).replace(/m/g, String(d.getMonth()+1).padStart(2,'0')).replace(/d/g, String(d.getDate()).padStart(2,'0')).replace(/H/g, String(d.getHours()).padStart(2,'0')).replace(/i/g, String(d.getMinutes()).padStart(2,'0')).replace(/s/g, String(d.getSeconds()).padStart(2,'0')); };
+    const time_fn = () => Math.floor(Date.now() / 1000);
+    const sort_fn = (a) => { a.sort((x, y) => x - y); return a; };
+    const rsort_fn = (a) => { a.sort((x, y) => y - x); return a; };
+    const asort_fn = (a) => { if (Array.isArray(a)) a.sort((x, y) => x - y); return a; };
+    const usort_fn = (a, fn) => { a.sort(fn); return a; };
+    const compact_fn = () => ({});
+    const extract_fn = () => 0;
+
+    const jsCode = transpilePhp(code);
+
+    const fn = new Function('echo', 'print', 'PHP_VERSION', 'count', 'array_sum',
+      'array_column', 'array_keys', 'array_values', 'array_merge', 'array_reverse',
+      'array_slice', 'array_splice', 'array_push', 'array_pop', 'array_shift',
+      'array_unshift', 'array_map', 'array_filter', 'array_reduce', 'array_combine',
+      'in_array', 'implode', 'explode', 'strlen', 'strtoupper', 'strtolower',
+      'str_replace', 'str_repeat', 'substr', 'trim', 'ltrim', 'rtrim', 'str_pad',
+      'sprintf', 'number_format', 'range', 'is_array', 'is_string', 'is_numeric',
+      'is_null', 'isset', 'empty', 'gettype', 'get_class', 'var_dump', 'print_r',
+      'json_encode', 'json_decode', 'intval', 'floatval', 'strval', 'abs', 'max',
+      'min', 'round', 'floor', 'ceil', 'sqrt', 'pow', 'date', 'time', 'sort',
+      'rsort', 'asort', 'usort',
+      jsCode);
+
+    fn(echo, print, PHP_VERSION, count, array_sum, array_column, array_keys,
+      array_values, array_merge, array_reverse, array_slice, array_splice,
+      array_push, array_pop, array_shift, array_unshift, array_map, array_filter,
+      array_reduce, array_combine, in_array, implode, explode, strlen,
+      strtoupper, strtolower, str_replace, str_repeat, substr, trim, ltrim,
+      rtrim, str_pad, sprintf_impl, number_format, range, is_array, is_string,
+      is_numeric, is_null, isset, empty, gettype, get_class, var_dump, print_r,
+      json_encode, json_decode, intval, floatval, strval, abs, max_fn, min_fn,
+      round_fn, floor_fn, ceil_fn, sqrt_fn, pow_fn, date_fn, time_fn,
+      sort_fn, rsort_fn, asort_fn, usort_fn);
+
+    if (out.length === 0) {
+      output.innerHTML = '<span class="py-success">代码执行完成（无输出）</span>';
+    } else {
+      const span = document.createElement('span');
+      span.textContent = out.join('');
+      output.appendChild(span);
+    }
+  } catch (err) {
+    const errSpan = document.createElement('span');
+    errSpan.className = 'py-err';
+    errSpan.textContent = 'PHP Error: ' + (err.message || String(err));
+    output.appendChild(errSpan);
+  } finally {
+    runBtn.disabled = false;
+    runBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> 运行';
+  }
+}
+
+function transpilePhp(phpCode) {
+  let code = phpCode;
+
+  code = code.replace(/<\?php\s*/g, '').replace(/\?>\s*$/g, '');
+
+  code = code.replace(/\/\*[\s\S]*?\*\//g, '');
+  code = code.replace(/\/\/[^\n]*/g, '');
+  code = code.replace(/^[ \t]*#[^\n]*/gm, '');
+
+  code = code.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, str) => {
+    if (!str.includes('$')) return match;
+    let c = str;
+    c = c.replace(/\{\$([^}]+)\}/g, '${$1}');
+    c = c.replace(/\$(\w+(?:\[[^\]]*\]|\->\w+)*)/g, '${$1}');
+    c = c.replace(/->/g, '.');
+    c = c.replace(/\\"/g, '"');
+    return '`' + c + '`';
+  });
+
+  code = code.replace(/foreach\s*\(\s*\$(\w+)\s+as\s+\$(\w+)\s*=>\s*\$(\w+)\s*\)/g,
+    'for (const [$2, $3] of Object.entries($1))');
+  code = code.replace(/foreach\s*\(\s*\$(\w+)\s+as\s+\$(\w+)\s*\)/g,
+    'for (const $2 of $1)');
+
+  code = code.replace(/\$(\w+)/g, '$1');
+
+  code = code.split('\n').map(line => {
+    const m = line.match(/^(\s*)(echo|print)\s+(.+);(.*)$/);
+    if (m) return m[1] + m[2] + '(' + m[3] + ');' + m[4];
+    return line;
+  }).join('\n');
+
+  code = code.replace(/=>/g, ':');
+
+  code = convertArrayFunc(code);
+
+  code = code.replace(/->/g, '.');
+
+  code = code.replace(/\s\.\s/g, ' + ');
+
+  code = convertBracketArrays(code);
+
+  return code;
+}
+
+function convertArrayFunc(code) {
+  let result = '';
+  let i = 0;
+  while (i < code.length) {
+    if (code.substring(i, i + 7).match(/^array\s*\(/)) {
+      const start = code.indexOf('(', i);
+      result += '[';
+      i = start + 1;
+      let depth = 1;
+      let inStr = false, strCh = '';
+      while (i < code.length && depth > 0) {
+        const c = code[i];
+        if (inStr) {
+          if (c === strCh && code[i - 1] !== '\\') inStr = false;
+          result += c;
+        } else if (c === '"' || c === "'" || c === '`') {
+          inStr = true; strCh = c; result += c;
+        } else if (c === '(' || c === '[' || c === '{') {
+          depth++; result += c;
+        } else if (c === ')') {
+          depth--;
+          if (depth === 0) { result += ']'; i++; break; }
+          result += c;
+        } else result += c;
+        i++;
+      }
+    } else {
+      result += code[i];
+      i++;
+    }
+  }
+  return result;
+}
+
+function convertBracketArrays(code) {
+  let result = '';
+  let i = 0;
+  while (i < code.length) {
+    if (code[i] === '[') {
+      let depth = 1, j = i + 1, inStr = false, strCh = '';
+      while (j < code.length && depth > 0) {
+        const c = code[j];
+        if (inStr) {
+          if (c === strCh && code[j - 1] !== '\\') inStr = false;
+        } else if (c === '"' || c === "'" || c === '`') {
+          inStr = true; strCh = c;
+        } else if (c === '[' || c === '(' || c === '{') depth++;
+        else if (c === ']') { depth--; if (depth === 0) break; }
+        j++;
+      }
+      const content = code.substring(i + 1, j);
+      const converted = convertBracketArrays(content);
+      const isAssoc = /^['"`]?\w+['"`]?\s*:/.test(converted.trim()) ||
+                      /,\s*['"`]?\w+['"`]?\s*:/.test(converted);
+      result += isAssoc ? '{' + converted + '}' : '[' + converted + ']';
+      i = j + 1;
+    } else {
+      result += code[i];
+      i++;
+    }
+  }
+  return result;
+}
+
+function initPhpHighlight() {
+  const codeArea = document.getElementById('phpCode');
+  const highlight = document.getElementById('phpHighlight');
+  if (!codeArea || !highlight) return;
+  const codeEl = highlight.querySelector('code');
+  if (!codeEl) return;
+
+  function updateHighlight() {
+    codeEl.textContent = codeArea.value + '\n';
+    if (window.Prism) Prism.highlightElement(codeEl);
+  }
+  updateHighlight();
+  codeArea.addEventListener('input', updateHighlight);
+  codeArea.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const s = codeArea.selectionStart, en = codeArea.selectionEnd;
+      codeArea.value = codeArea.value.substring(0, s) + '    ' + codeArea.value.substring(en);
+      codeArea.selectionStart = codeArea.selectionEnd = s + 4;
+      updateHighlight();
+    }
+  });
+  codeArea.addEventListener('scroll', () => {
+    highlight.scrollTop = codeArea.scrollTop;
+    highlight.scrollLeft = codeArea.scrollLeft;
+  });
+}
+
+function initPhpDownloadButton() {
+  const downloadBtn = document.getElementById('phpDownload');
+  const codeArea = document.getElementById('phpCode');
+  if (!downloadBtn || !codeArea) return;
+  downloadBtn.addEventListener('click', () => {
+    const blob = new Blob([codeArea.value], { type: 'text/x-php' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'index.php'; a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+function initPhpImportButton() {
+  const importBtn = document.getElementById('phpImport');
+  const importFile = document.getElementById('phpImportFile');
+  const codeArea = document.getElementById('phpCode');
+  const highlight = document.getElementById('phpHighlight');
+  if (!importBtn || !importFile || !codeArea) return;
+  importBtn.addEventListener('click', () => importFile.click());
+  importFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      codeArea.value = ev.target.result;
+      if (highlight) {
+        const codeEl = highlight.querySelector('code');
+        if (codeEl) {
+          codeEl.textContent = codeArea.value + '\n';
+          if (window.Prism) Prism.highlightElement(codeEl);
+        }
+      }
+    };
+    reader.readAsText(file);
+    importFile.value = '';
+  });
+}
+
+/* ================================================================
+   CSS 格式化 / 压缩
+   ================================================================ */
+
+function initCssFormatter() {
+  const codeArea = document.getElementById('cssFmtCode');
+  const outputArea = document.getElementById('cssFmtOutput');
+  const outputHighlight = document.getElementById('cssFmtOutputHighlight');
+  const formatBtn = document.getElementById('cssFmtFormat');
+  const compressBtn = document.getElementById('cssFmtCompress');
+  const clearBtn = document.getElementById('cssFmtClear');
+  const copyBtn = document.getElementById('cssFmtCopy');
+  const highlight = document.getElementById('cssFmtHighlight');
+
+  if (!codeArea || !outputArea) return;
+
+  if (highlight) {
+    const codeEl = highlight.querySelector('code');
+    if (codeEl) {
+      function updateHighlight() {
+        codeEl.textContent = codeArea.value + '\n';
+        if (window.Prism) Prism.highlightElement(codeEl);
+      }
+      updateHighlight();
+      codeArea.addEventListener('input', updateHighlight);
+      codeArea.addEventListener('scroll', () => {
+        highlight.scrollTop = codeArea.scrollTop;
+        highlight.scrollLeft = codeArea.scrollLeft;
+      });
+    }
+  }
+
+  function updateOutputHighlight() {
+    if (!outputHighlight) return;
+    const codeEl = outputHighlight.querySelector('code');
+    if (!codeEl) return;
+    codeEl.textContent = outputArea.value + '\n';
+    if (window.Prism) Prism.highlightElement(codeEl);
+    outputHighlight.scrollTop = outputArea.scrollTop;
+    outputHighlight.scrollLeft = outputArea.scrollLeft;
+  }
+
+  outputArea.addEventListener('scroll', () => {
+    if (outputHighlight) {
+      outputHighlight.scrollTop = outputArea.scrollTop;
+      outputHighlight.scrollLeft = outputArea.scrollLeft;
+    }
+  });
+
+  function formatCss(css) {
+    css = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    css = css.replace(/\s*\{\s*/g, ' {\n  ');
+    css = css.replace(/\s*;\s*/g, ';\n  ');
+    css = css.replace(/\s*\}\s*/g, '\n}\n\n');
+    css = css.replace(/\n  \n/g, '\n');
+    css = css.replace(/\n\n+/g, '\n\n');
+    css = css.replace(/^\s+/gm, (match) => match.replace(/\t/g, '  '));
+    css = css.replace(/\n  \n}/g, '\n}');
+    css = css.trim() + '\n';
+    return css;
+  }
+
+  function compressCss(css) {
+    css = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    css = css.replace(/\s*:\s*/g, ':');
+    css = css.replace(/\s*;\s*/g, ';');
+    css = css.replace(/\s*\{\s*/g, '{');
+    css = css.replace(/\s*\}\s*/g, '}');
+    css = css.replace(/\s*,\s*/g, ',');
+    css = css.replace(/\n+/g, '');
+    css = css.replace(/;}/g, '}');
+    css = css.trim();
+    return css;
+  }
+
+  if (formatBtn) formatBtn.addEventListener('click', () => {
+    outputArea.value = formatCss(codeArea.value);
+    updateOutputHighlight();
+  });
+
+  if (compressBtn) compressBtn.addEventListener('click', () => {
+    outputArea.value = compressCss(codeArea.value);
+    updateOutputHighlight();
+  });
+
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    codeArea.value = '';
+    outputArea.value = '';
+    if (highlight) {
+      const codeEl = highlight.querySelector('code');
+      if (codeEl) { codeEl.textContent = '\n'; if (window.Prism) Prism.highlightElement(codeEl); }
+    }
+    updateOutputHighlight();
+  });
+
+  if (copyBtn) copyBtn.addEventListener('click', () => {
+    if (!outputArea.value) return;
+    navigator.clipboard.writeText(outputArea.value).then(() => {
+      const original = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 已复制';
+      setTimeout(() => { copyBtn.innerHTML = original; }, 1500);
+    }).catch(() => {
+      outputArea.select();
+      document.execCommand('copy');
+    });
+  });
+}
+
+/* ================================================================
+   Base64 加密 / 解密
+   ================================================================ */
+
+function initBase64() {
+  const input = document.getElementById('b64Input');
+  const output = document.getElementById('b64Output');
+  const encodeBtn = document.getElementById('b64Encode');
+  const decodeBtn = document.getElementById('b64Decode');
+  const clearBtn = document.getElementById('b64Clear');
+  const swapBtn = document.getElementById('b64Swap');
+  const copyBtn = document.getElementById('b64Copy');
+
+  if (!input || !output) return;
+
+  function encodeBase64(text) {
+    try {
+      return btoa(unescape(encodeURIComponent(text)));
+    } catch(e) {
+      return '编码失败：' + e.message;
+    }
+  }
+
+  function decodeBase64(base64) {
+    try {
+      return decodeURIComponent(escape(atob(base64.trim())));
+    } catch(e) {
+      return '解码失败：输入不是有效的 Base64 字符串';
+    }
+  }
+
+  if (encodeBtn) encodeBtn.addEventListener('click', () => {
+    output.value = encodeBase64(input.value);
+  });
+
+  if (decodeBtn) decodeBtn.addEventListener('click', () => {
+    output.value = decodeBase64(input.value);
+  });
+
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    input.value = '';
+    output.value = '';
+  });
+
+  if (swapBtn) swapBtn.addEventListener('click', () => {
+    const tmp = input.value;
+    input.value = output.value;
+    output.value = tmp;
+  });
+
+  if (copyBtn) copyBtn.addEventListener('click', () => {
+    if (!output.value) return;
+    navigator.clipboard.writeText(output.value).then(() => {
+      const original = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 已复制';
+      setTimeout(() => { copyBtn.innerHTML = original; }, 1500);
+    }).catch(() => {
+      output.select();
+      document.execCommand('copy');
+    });
+  });
+}
+
+/* ================================================================
+   在线调色板
+   ================================================================ */
+
+function initColorPicker() {
+  const picker = document.getElementById('colorPicker');
+  const preview = document.getElementById('colorPreview');
+  const hexInput = document.getElementById('colorHex');
+  const rgbInput = document.getElementById('colorRgb');
+  const hslInput = document.getElementById('colorHsl');
+  const copyBtn = document.getElementById('colorCopy');
+  const paletteGrid = document.getElementById('colorPalette');
+  const tabs = document.querySelectorAll('.color-tab');
+
+  if (!picker || !preview) return;
+
+  let currentScheme = 'complementary';
+
+  function hexToRgb(hex) {
+    hex = hex.replace('#', '');
+    return {
+      r: parseInt(hex.substring(0, 2), 16),
+      g: parseInt(hex.substring(2, 4), 16),
+      b: parseInt(hex.substring(4, 6), 16)
+    };
+  }
+
+  function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+  }
+
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+    if (max === min) { h = s = 0; }
+    else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+    return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+  }
+
+  function hslToRgb(h, s, l) {
+    h /= 360; s /= 100; l /= 100;
+    let r, g, b;
+    if (s === 0) { r = g = b = l; }
+    else {
+      const hue2rgb = (p, q, t) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+  }
+
+  function updateAll(hex) {
+    hex = hex.toLowerCase();
+    const rgb = hexToRgb(hex);
+    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+    picker.value = hex;
+    preview.style.background = hex;
+    hexInput.value = hex;
+    rgbInput.value = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+    hslInput.value = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+
+    updatePalette(hex, currentScheme);
+  }
+
+  function generatePalette(hex, scheme) {
+    const rgb = hexToRgb(hex);
+    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+    const colors = [];
+
+    switch (scheme) {
+      case 'complementary':
+        colors.push(hex);
+        colors.push(hslToHex((hsl.h + 180) % 360, hsl.s, hsl.l));
+        for (let i = 1; i <= 2; i++) {
+          colors.push(hslToHex(hsl.h, hsl.s, Math.max(10, hsl.l - i * 15)));
+          colors.push(hslToHex((hsl.h + 180) % 360, hsl.s, Math.max(10, hsl.l - i * 15)));
+        }
+        break;
+      case 'analogous':
+        for (let i = -2; i <= 2; i++) {
+          colors.push(hslToHex((hsl.h + i * 30 + 360) % 360, hsl.s, hsl.l));
+        }
+        break;
+      case 'triadic':
+        colors.push(hex);
+        colors.push(hslToHex((hsl.h + 120) % 360, hsl.s, hsl.l));
+        colors.push(hslToHex((hsl.h + 240) % 360, hsl.s, hsl.l));
+        for (let i = 1; i <= 2; i++) {
+          colors.push(hslToHex(hsl.h, hsl.s, Math.max(10, hsl.l - i * 20)));
+          colors.push(hslToHex((hsl.h + 120) % 360, hsl.s, Math.max(10, hsl.l - i * 20)));
+        }
+        break;
+      case 'shades':
+        colors.push(hex);
+        for (let i = 1; i <= 5; i++) {
+          colors.push(hslToHex(hsl.h, hsl.s, Math.max(5, hsl.l - i * 15)));
+        }
+        for (let i = 1; i <= 3; i++) {
+          colors.unshift(hslToHex(hsl.h, hsl.s, Math.min(95, hsl.l + i * 15)));
+        }
+        break;
+    }
+    return colors;
+  }
+
+  function hslToHex(h, s, l) {
+    const rgb = hslToRgb(h, s, l);
+    return rgbToHex(rgb.r, rgb.g, rgb.b);
+  }
+
+  function updatePalette(hex, scheme) {
+    const colors = generatePalette(hex, scheme);
+    if (!paletteGrid) return;
+    paletteGrid.innerHTML = '';
+    colors.forEach(color => {
+      const rgb = hexToRgb(color);
+      const swatch = document.createElement('div');
+      swatch.className = 'color-swatch';
+      swatch.innerHTML = `
+        <div class="color-swatch-color" style="background:${color}"></div>
+        <div class="color-swatch-info">
+          <span class="color-swatch-hex">${color.toUpperCase()}</span>
+          <span class="color-swatch-rgb">rgb(${rgb.r}, ${rgb.g}, ${rgb.b})</span>
+        </div>
+      `;
+      swatch.addEventListener('click', () => {
+        updateAll(color);
+      });
+      paletteGrid.appendChild(swatch);
+    });
+  }
+
+  picker.addEventListener('input', () => updateAll(picker.value));
+
+  hexInput.addEventListener('input', () => {
+    const v = hexInput.value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) updateAll(v);
+  });
+
+  rgbInput.addEventListener('input', () => {
+    const m = rgbInput.value.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (m) updateAll(rgbToHex(parseInt(m[1]), parseInt(m[2]), parseInt(m[3])));
+  });
+
+  hslInput.addEventListener('input', () => {
+    const m = hslInput.value.match(/(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?/);
+    if (m) {
+      const rgb = hslToRgb(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]));
+      updateAll(rgbToHex(rgb.r, rgb.g, rgb.b));
+    }
+  });
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentScheme = tab.dataset.scheme;
+      updateAll(hexInput.value);
+    });
+  });
+
+  if (copyBtn) copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(hexInput.value).then(() => {
+      const original = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 已复制';
+      setTimeout(() => { copyBtn.innerHTML = original; }, 1500);
+    }).catch(() => {});
+  });
+
+  updateAll('#3b82f6');
+}

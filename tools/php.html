@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <script>(function(){var s=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',s||(d?'dark':'light'));})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python 在线运行 — 寒枝可栖</title>
+    <title>PHP 在线运行 — 寒枝可栖</title>
     <meta name="author" content="寒枝可栖">
     <link rel="icon" href="../home-icon.jpeg">
     <link rel="stylesheet" href="../style/home.css">
@@ -20,24 +20,20 @@
         <section class="page active">
             <div class="try-wrap">
                 <div class="try-main">
-                    <div class="try-panel active" id="panel-python">
+                    <div class="try-panel active" id="panel-php">
                         <div class="try-toolbar">
-                            <span class="try-url">Python 在线运行</span>
+                            <span class="try-url">PHP 在线运行</span>
                             <div class="py-actions">
-                                <select class="py-engine-select" id="pyEngine" title="选择运行引擎">
-                                    <option value="builtin">系统自带（快速）</option>
-                                    <option value="pyodide">Pyodide（完整）</option>
-                                </select>
-                                <input type="file" id="pyImportFile" accept=".py,.txt" style="display:none">
-                                <button class="md-btn" id="pyImport" title="导入 .py 文件">
+                                <input type="file" id="phpImportFile" accept=".php,.txt" style="display:none">
+                                <button class="md-btn" id="phpImport" title="导入 .php 文件">
                                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                                     导入
                                 </button>
-                                <button class="md-btn" id="pyDownload" title="下载 .py 文件">
+                                <button class="md-btn" id="phpDownload" title="下载 .php 文件">
                                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                                     下载
                                 </button>
-                                <button class="try-run" id="pyRun">
+                                <button class="try-run" id="phpRun">
                                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                                     运行
                                 </button>
@@ -45,18 +41,29 @@
                         </div>
                         <div class="py-wrap">
                             <div class="py-editor-area">
-                                <div class="py-editor-header">main.py</div>
+                                <div class="py-editor-header">index.php</div>
                                 <div class="code-editor-wrap">
-                                    <pre class="code-highlight" id="pyHighlight" aria-hidden="true"><code class="language-python"></code></pre>
-                                    <textarea id="pyCode" spellcheck="false" placeholder="# 在此输入 Python 代码">print("Hello, World!")
+                                    <pre class="code-highlight" id="phpHighlight" aria-hidden="true"><code class="language-php"></code></pre>
+                                    <textarea id="phpCode" spellcheck="false" placeholder="<?php // 在此输入 PHP 代码 ?>"><?php
 
-for i in range(5):
-    print(f"第 {i+1} 次循环")</textarea>
+$users = [
+    ['name' => 'Alice', 'age' => 25],
+    ['name' => 'Bob',   'age' => 30],
+];
+
+foreach ($users as $u) {
+    echo "{$u['name']} is {$u['age']} years old\n";
+}
+
+$total = array_sum(array_column($users, 'age'));
+echo "Total age: $total\n";
+
+echo "\nPHP version: " . PHP_VERSION;</textarea>
                                 </div>
                             </div>
                             <div class="py-output-area">
                                 <div class="py-output-header">输出</div>
-                                <div class="py-output" id="pyOutput"><span class="py-placeholder">点击「运行」执行代码</span></div>
+                                <div class="py-output" id="phpOutput"><span class="py-placeholder">点击「运行」执行代码</span></div>
                             </div>
                         </div>
                     </div>
@@ -69,7 +76,7 @@ for i in range(5):
     <div id="modalsMount"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-php.min.js"></script>
     <script src="../script/changelog.js"></script>
     <script src="../script/sidebar.js"></script>
     <script src="../script/setting.js"></script>
@@ -78,10 +85,10 @@ for i in range(5):
     <script src="tool.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            if (typeof initPythonHighlight === 'function') initPythonHighlight();
-            if (typeof initPythonRunButton === 'function') initPythonRunButton();
-            if (typeof initPythonDownloadButton === 'function') initPythonDownloadButton();
-            if (typeof initPythonImportButton === 'function') initPythonImportButton();
+            if (typeof initPhpRun === 'function') initPhpRun();
+            if (typeof initPhpHighlight === 'function') initPhpHighlight();
+            if (typeof initPhpDownloadButton === 'function') initPhpDownloadButton();
+            if (typeof initPhpImportButton === 'function') initPhpImportButton();
         });
     </script>
 </body>

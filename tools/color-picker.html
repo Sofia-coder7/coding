@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <script>(function(){var s=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',s||(d?'dark':'light'));})();</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线调色板 — 寒枝可栖</title>
+    <meta name="author" content="寒枝可栖">
+    <link rel="icon" href="../home-icon.jpeg">
+    <link rel="stylesheet" href="../style/home.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
+</head>
+<body>
+    <div id="loadingBarMount"></div>
+    <div id="sidebarMount"></div>
+
+    <div class="pages">
+        <section class="page active">
+            <div class="try-wrap">
+                <div class="try-main">
+                    <div class="try-panel active" id="panel-color">
+                        <div class="try-toolbar">
+                            <span class="try-url">在线调色板</span>
+                            <div class="py-actions">
+                                <button class="md-btn" id="colorCopy" title="复制颜色值">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                    复制
+                                </button>
+                            </div>
+                        </div>
+                        <div class="color-tool-wrap">
+                            <div class="color-picker-area">
+                                <div class="color-preview-large" id="colorPreview"></div>
+                                <input type="color" id="colorPicker" value="#3b82f6" style="width:100%;height:60px;border:none;border-radius:var(--r-md);cursor:pointer;background:none;">
+                                <div class="color-value-group">
+                                    <label class="color-value-item">
+                                        <span class="color-value-label">HEX</span>
+                                        <input type="text" id="colorHex" value="#3b82f6" spellcheck="false">
+                                    </label>
+                                    <label class="color-value-item">
+                                        <span class="color-value-label">RGB</span>
+                                        <input type="text" id="colorRgb" value="rgb(59, 130, 246)" spellcheck="false">
+                                    </label>
+                                    <label class="color-value-item">
+                                        <span class="color-value-label">HSL</span>
+                                        <input type="text" id="colorHsl" value="hsl(217, 91%, 60%)" spellcheck="false">
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="color-palette-area">
+                                <div class="color-palette-header">配色方案</div>
+                                <div class="color-palette-tabs">
+                                    <button class="color-tab active" data-scheme="complementary">互补色</button>
+                                    <button class="color-tab" data-scheme="analogous">类似色</button>
+                                    <button class="color-tab" data-scheme="triadic">三元色</button>
+                                    <button class="color-tab" data-scheme="shades">明暗渐变</button>
+                                </div>
+                                <div class="color-palette-grid" id="colorPalette"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="footerMount"></div>
+    <div id="modalsMount"></div>
+
+    <script src="../script/changelog.js"></script>
+    <script src="../script/sidebar.js"></script>
+    <script src="../script/setting.js"></script>
+    <script src="../script/contextmenu.js"></script>
+    <script src="../script/outer.js"></script>
+    <script src="tool.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof initColorPicker === 'function') initColorPicker();
+        });
+    </script>
+</body>
+</html>

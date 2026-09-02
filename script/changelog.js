@@ -2,9 +2,22 @@
    更新日志数据 — 独立存储，便于维护
    ================================================================ */
 
-const CHANGELOG_VERSION = '3.10.5';
+const CHANGELOG_VERSION = '3.11';
 
 const CHANGELOG_DATA = [
+  {
+    version: '3.11',
+    date: '2026-09-02',
+    items: [
+      { type: '新增', tag: 'new', text: '新增 PHP 在线运行工具（内置 PHP→JS 转译器，支持 echo、变量、数组、foreach、函数等）' },
+      { type: '新增', tag: 'new', text: '新增 TypeScript 在线运行工具（使用 TypeScript 编译器转译后执行，支持 console.log 输出）' },
+      { type: '新增', tag: 'new', text: '新增 CSS 格式化/压缩工具' },
+      { type: '新增', tag: 'new', text: '新增 Base64 加密/解密工具（支持 UTF-8 编码）' },
+      { type: '新增', tag: 'new', text: '新增在线调色板工具（HEX/RGB/HSL 互转，配色方案生成）' },
+      { type: '优化', tag: 'optimize', text: '将 common.js 拆分为 sidebar.js、setting.js、contextmenu.js、outer.js，加快加载速度' },
+      { type: '优化', tag: 'optimize', text: '侧边栏重构：去除「在线工具」，新增「编译工具」「前端编辑器」「前端工具」三个下拉菜单' }
+    ]
+  },
   {
     version: '3.10.5',
     date: '2026-09-02',
