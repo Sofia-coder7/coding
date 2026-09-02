@@ -2,9 +2,40 @@
    更新日志数据 — 独立存储，便于维护
    ================================================================ */
 
-const CHANGELOG_VERSION = '3.10.1';
+const CHANGELOG_VERSION = '3.10.5';
 
 const CHANGELOG_DATA = [
+  {
+    version: '3.10.5',
+    date: '2026-09-02',
+    items: [
+      { type: '优化', tag: 'optimize', text: '页面跳转改为预加载模式：旧页面保持可见，fetch 加载完成后才跳转，避免白屏' }
+    ]
+  },
+  {
+    version: '3.10.4',
+    date: '2026-09-02',
+    items: [
+      { type: '修复', tag: 'fix', text: '修复切换页面时内容消失后突然闪现，内联脚本在 CSS 加载前设置主题' },
+      { type: '修复', tag: 'fix', text: '移除 body 背景色过渡动画，添加 html 背景色和 color-scheme' }
+    ]
+  },
+  {
+    version: '3.10.3',
+    date: '2026-09-02',
+    items: [
+      { type: '修复', tag: 'fix', text: '修复外部资源阻塞渲染导致页面白屏，51.la 改异步、Google Fonts 改非阻塞加载' },
+      { type: '优化', tag: 'optimize', text: '首页和关于页移除不必要的 Prism 脚本，减少外部请求' },
+      { type: '优化', tag: 'optimize', text: '导航跳转移除 50ms 人为延迟，改为立即跳转' }
+    ]
+  },
+  {
+    version: '3.10.2',
+    date: '2026-09-01',
+    items: [
+      { type: '修复', tag: 'fix', text: '修复切换页面时内容先消失再渐变出现，移除页面过渡动画' }
+    ]
+  },
   {
     version: '3.10.1',
     date: '2026-08-31',

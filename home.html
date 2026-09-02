@@ -2,16 +2,18 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <script>(function(){var s=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',s||(d?'dark':'light'));})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>寒枝可栖 — Portfolio</title>
     <meta name="author" content="寒枝可栖">
     <meta name="robots" content="index, follow">
     <link rel="icon" href="home-icon.jpeg">
     <link rel="stylesheet" href="style/home.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <script charset="UTF-8" id="LA_COLLECT" src="https://sdk.51.la/js-sdk-pro.min.js"></script>
-    <script>LA.init({id:"3R1OGymGzZO5DVI3",ck:"3R1OGymGzZO5DVI3"})</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
+    <script async charset="UTF-8" id="LA_COLLECT" src="https://sdk.51.la/js-sdk-pro.min.js"></script>
+    <script>window.addEventListener('load',function(){if(typeof LA!=='undefined')LA.init({id:"3R1OGymGzZO5DVI3",ck:"3R1OGymGzZO5DVI3"})})</script>
     <script>
     window.PVStatsReady = (async function() {
       var API = 'https://js.ruseo.cn/api/counter.php';
@@ -102,7 +104,6 @@
     <div id="footerMount"></div>
     <div id="modalsMount"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
     <script src="script/changelog.js"></script>
     <script src="script/common.js"></script>
 </body>

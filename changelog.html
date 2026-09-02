@@ -2,13 +2,15 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <script>(function(){var s=localStorage.getItem('theme');var d=window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.setAttribute('data-theme',s||(d?'dark':'light'));})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>更新日志 — 寒枝可栖</title>
     <meta name="author" content="寒枝可栖">
     <link rel="icon" href="home-icon.jpeg">
     <link rel="stylesheet" href="style/home.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
 </head>
 <body>
     <div id="loadingBarMount"></div>
@@ -28,7 +30,7 @@
                             <p class="about-desc">记录本站每一次迭代与成长，见证从无到有的每一步。</p>
                         </div>
                         <div class="about-hero-right">
-                            <div class="about-deco" id="changelogDeco" aria-hidden="true">v3.10.1</div>
+                            <div class="about-deco" id="changelogDeco" aria-hidden="true">v3.10.5</div>
                         </div>
                     </div>
 

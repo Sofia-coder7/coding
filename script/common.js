@@ -108,11 +108,10 @@ function buildSidebar() {
 
 /* ---------- 生成 Footer ---------- */
 function buildFooter() {
-  const v = typeof CHANGELOG_VERSION !== 'undefined' ? CHANGELOG_VERSION : '3.10.1';
+  const v = typeof CHANGELOG_VERSION !== 'undefined' ? CHANGELOG_VERSION : '3.10.5';
   return `
     <div class="page-footer" id="pageFooter">
       <p>© 寒枝可栖 2026 保留所有权利.</p>
-      <p>第三方网站内容由其运营者负责，请自行判断，与本站无关.</p>
       <p>本站已运行 <span id="runTime">0年 0月 0天</span> | v${v}</p>
     </div>`;
 }
@@ -124,9 +123,9 @@ function buildModals() {
       <div class="changelog-modal">
         <div class="changelog-header">
           <div class="changelog-version">
-            <span class="changelog-old-ver">v3.10</span>
+            <span class="changelog-old-ver">v3.10.4</span>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-            <span class="changelog-new-ver">v3.10.1</span>
+            <span class="changelog-new-ver">v3.10.5</span>
           </div>
           <button class="changelog-close-x" id="changelogCloseX" aria-label="关闭">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -317,15 +316,38 @@ function initNavigation() {
 
 function navigateTo(path) {
   const base = siteBase();
-  const bar = document.getElementById('loadingBar');
-  const progress = bar ? bar.querySelector('.loading-bar-progress') : null;
-  if (progress) {
+  const url = base + path;
+
+  var bar = document.getElementById('loadingBar');
+  var progress = bar ? bar.querySelector('.loading-bar-progress') : null;
+  if (bar && progress) {
     bar.classList.remove('done');
+    progress.style.transition = 'none';
     progress.style.width = '0%';
-    progress.style.transition = 'width 0.15s ease';
-    requestAnimationFrame(() => { progress.style.width = '60%'; });
+    requestAnimationFrame(function() {
+      progress.style.transition = 'width 0.6s ease';
+      progress.style.width = '90%';
+    });
   }
-  setTimeout(() => { window.location.href = base + path; }, 50);
+
+  var settled = false;
+  function go() {
+    if (settled) return;
+    settled = true;
+    if (progress) {
+      progress.style.width = '100%';
+      setTimeout(function() { if (bar) bar.classList.add('done'); }, 200);
+    }
+    window.location.href = url;
+  }
+
+  setTimeout(go, 8000);
+
+  try {
+    fetch(url).then(go, go);
+  } catch(e) {
+    go();
+  }
 }
 
 /* ---------- 侧边栏 ---------- */
@@ -365,13 +387,13 @@ function initChangelog() {
   }
 
   const seenVersion = localStorage.getItem('changelog_seen_version');
-  if (seenVersion !== (typeof CHANGELOG_VERSION !== 'undefined' ? CHANGELOG_VERSION : '3.10.1')) {
+  if (seenVersion !== (typeof CHANGELOG_VERSION !== 'undefined' ? CHANGELOG_VERSION : '3.10.5')) {
     setTimeout(() => overlay.classList.add('show'), 500);
   }
 
   const close = () => {
     overlay.classList.remove('show');
-    localStorage.setItem('changelog_seen_version', typeof CHANGELOG_VERSION !== 'undefined' ? CHANGELOG_VERSION : '3.10.1');
+    localStorage.setItem('changelog_seen_version', typeof CHANGELOG_VERSION !== 'undefined' ? CHANGELOG_VERSION : '3.10.5');
   };
 
   const closeX = document.getElementById('changelogCloseX');
